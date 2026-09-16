@@ -8,3 +8,7 @@
  * @copyright Copyright (c) 2026
  * 
  */
+#ifndef __BASIS_HPP__
+#define __BASIS_HPP__
+
+#endif
