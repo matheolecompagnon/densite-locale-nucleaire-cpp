@@ -21,6 +21,4 @@ int main(int , char **) {
     Z.print("matrice Z :");
 
     
-
-    
 }
