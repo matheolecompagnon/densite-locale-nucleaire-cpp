@@ -1,22 +1,27 @@
 CXX := g++
 
-OPTIONS := -Wall -Wextra -Werror
+OPTIONS_DEBUG := -Wall -Wextra -Werror -g -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -Iinclude
+OPTIONS_RELEASE := -Wall -Wextra -Werror -O2 -Iinclude
 
-src := ./src/Basis.cpp ./src/Poly.cpp
-objects := ./bin/Basis.o ./bin/Poly.o
+debug: OPTIONS := $(OPTIONS_DEBUG)
+release: OPTIONS := $(OPTIONS_RELEASE)
+
+debug: run
+release: run
+
+files := main Basis Poly
+objects := $(files:%=./bin/%.o)
 
 
-
-all: run clean
 
 run : $(objects)
-	$(CXX) -o exec ./include/$^ $(OPTIONS)
+	$(CXX) -o exec $^ $(OPTIONS)
 	@echo "\n\n========== Debut Affichage Programme ==========\n\n"
 	@./exec
 	@echo "\n\n========== Fin Affichage Programme ==========\n\n"
 
-$(objects): %.o: %.c
-	$(CXX) -c ./bin/$^ -o ./src/$@ $(OPTIONS)
+$(objects): ./bin/%.o: ./src/%.cpp
+	$(CXX) -c $^ -o $@ $(OPTIONS)
 
 
 clean :
