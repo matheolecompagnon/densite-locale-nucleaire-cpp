@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2026
  * 
  */
-
+#include <cxxtest/TestSuite.h>
  #include "basis.hpp"
  #include "poly.hpp"
 

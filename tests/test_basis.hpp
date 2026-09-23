@@ -8,8 +8,8 @@
  * @copyright Copyright (c) 2026
  * 
  */
-
-  #include "basis.hpp"
+#include <cxxtest/TestSuite.h>
+#include "basis.hpp"
 
  /**
     \brief Cette classe décrit les tests de la classe basis

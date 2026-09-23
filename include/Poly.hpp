@@ -12,8 +12,6 @@
 #ifndef __POLY_HPP__
 #define __POLY_HPP__
 
-#endif
-
 #include <armadillo>
 /**
  * @brief Cette classe définit la structure d'un polynome
@@ -34,7 +32,7 @@
         /**
          * @brief Calculer les valeurs des polynomes d'Hermite à partir de
          * d'un entier n et d'un vecteur vect et remplir la matrice du polynome
-         * 
+         * #endif
          * @param n  limite supérieure pour les dégrés (exclusive)
          * @param vect  Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
@@ -77,3 +75,4 @@
         
 
  }
+#endif
