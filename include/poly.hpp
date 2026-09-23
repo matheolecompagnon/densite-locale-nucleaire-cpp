@@ -24,18 +24,23 @@
  class Poly {
     private:
         /**
-         * @brief matrice pour stocker les coefficients calculés avec
-         * les fonctions calcHermite et calcLaguerre
+         * @brief coefficients est une matrice pour stocker les coefficients 
+         * des polynomes calculés avec les fonctions calcHermite et calcLaguerre
          */
-
-        arma::mat matrice;
+        arma::mat coefficients;
+        /**
+         * @brief evaluated_value est une matrice pour stocker les resultats de l'évaluation
+         * des polynomes stocké dans coefficients en des valeurs qui sont passées en parametre
+         * des fonctions calcHermite et calcLaguerre par un vecteur.
+         */
+        arma::mat evaluated_value;
     public:
 
         /**
          * @brief Calculer les valeurs des polynomes d'Hermite à partir de
          * d'un entier n et d'un vecteur vect et remplir la matrice du polynome
          * 
-         * @param n  limite supérieure pour les dégrés (exclusive)
+         * @param n  limite supésrieure pour les dégrés (exclusive)
          * @param vect  Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
          */
@@ -47,7 +52,7 @@
          * 
          * @param n   Le degré \b n du polynôme souhaité
          * @return Un vecteur (arma::vec) contenant 
-         * les valeurs du polynôme d'Hermite de degré \c n 
+         * les valeurs de l'evaluation du polynôme d'Hermite de degré \c n 
          */
         arma::vec hermite(int n);
         
@@ -69,11 +74,21 @@
          * @param n dégré spécifique pour le polynôme à obtenir
          * @param m paramètre spécifique pour le polynôme à obtenir
          * @return  Un vecteur (arma::vec) contenant 
-         * les valeurs du polynôme de Laguerre de degré \b n  et de
+         * les valeurs de l'évaluation du polynôme de Laguerre de degré \b n  et de
          * paramètre \b m
          */
         arma::vec laguerre(int n, int m);
 
-        
+        /**
+         * @brief Calculer les valeurs de la dérivé des polynômes généralisés de Laguerre à
+         * partir de deux entiers n et m et d'un vecteur vect , et remplir la 
+         * matrice du polynome
+         *
+         * @param n limite supérieure pour les dégrés (exclusive)
+         * @param m limite supérieure pour les paramètres (exclusive)
+         * @param vect Le vecteur qui contient les valeurs (les points d'abcisse z)
+         * sur lesquels les polynômes doivent etre évalués
+         */
+        void calcDerivatveLaguerre(int n,int m,arma::vec vect);
 
  }
