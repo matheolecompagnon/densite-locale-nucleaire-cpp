@@ -24,46 +24,48 @@
         Poly();
 
         /**
-         * @brief Calculer les polynomes d'Hermite à partir de
-         * d'un entier @param n et d'un vecteur @param vect et 
-         * remplir la matrice du polynome
+         * @brief Calculer les valeurs des polynomes d'Hermite à partir de
+         * d'un entier n et d'un vecteur vect et remplir la matrice du polynome
          * 
-         * @param n 
-         * @param vect
+         * @param n  limite supérieure pour les dégrés (exclusive)
+         * @param vect  Le vecteur qui contient les valeurs (les points d'abcisse z)
+         * sur lesquels les polynômes doivent etre évalués
          */
         void calcHermite(int n,arma::vec vect);
 
         /**
-         * @brief  aucune idée pour le moment
+         * @brief  Récupère les résultats calculés lors de l'appel 
+         * précédent à calcHermite
          * 
-         * @param n 
-         * @return arma::vec 
+         * @param n   Le degré \b n du polynôme souhaité
+         * @return Un vecteur (arma::vec) contenant 
+         * les valeurs du polynôme d'Hermite de degré \c n 
          */
         arma::vec hermite(int n);
-
-        // Calculer les polynômes généralisés de Laguerre pour i
-        // entre 0 et (n-1)  et j entre 0 et (m-1)
         
         /**
-         * @brief Calculer les polynômes généralisés de Laguerre à
-         * partir de deux entiers @param n et @param m et d'un vecteur
-         * @param vect , et remplir la matrice du polynome
+         * @brief Calculer les valeurs des polynômes généralisés de Laguerre à
+         * partir de deux entiers n et m et d'un vecteur vect , et remplir la 
+         * matrice du polynome
          *
-         * @param n 
-         * @param m 
-         * @param vect 
+         * @param n limite supérieure pour les dégrés (exclusive)
+         * @param m limite supérieure pour les paramètres (exclusive)
+         * @param vect Le vecteur qui contient les valeurs (les points d'abcisse z)
+         * sur lesquels les polynômes doivent etre évalués
          */
         void calcLaguerre(int n,int m,arma::vec vect);
 
         /**
          * @brief aucune idée pour le moment
          * 
-         * @param n 
-         * @param m
-         * @return arma::vec 
+         * @param n dégré spécifique pour le polynôme à obtenir
+         * @param m paramètre spécifique pour le polynôme à obtenir
+         * @return  Un vecteur (arma::vec) contenant 
+         * les valeurs du polynôme de Laguerre de degré \b n  et de
+         * paramètre \b m
          */
         arma::vec laguerre(int n, int m);
 
-        //~Poly();
+        
 
  }
