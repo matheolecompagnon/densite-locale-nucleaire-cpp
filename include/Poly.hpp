@@ -19,9 +19,13 @@
 
  class Poly {
     private:
+        /**
+         * @brief matrice pour stocker les coefficients calculés avec
+         * les fonctions calcHermite et calcLaguerre
+         */
+
         arma::mat matrice;
     public:
-        Poly();
 
         /**
          * @brief Calculer les valeurs des polynomes d'Hermite à partir de
