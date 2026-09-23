@@ -12,7 +12,6 @@
 #ifndef __POLY_HPP__
 #define __POLY_HPP__
 
-#endif
 
 #include <armadillo>
 /**
@@ -77,3 +76,5 @@
         
 
  }
+
+ #endif
