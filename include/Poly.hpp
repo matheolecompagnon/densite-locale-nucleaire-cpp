@@ -12,7 +12,6 @@
 #ifndef __POLY_HPP__
 #define __POLY_HPP__
 
-#endif
 
 #include <armadillo>
 /**
@@ -43,11 +42,12 @@
 
         /**
          * @brief  Récupère les résultats calculés lors de l'appel 
-         * précédent à calcHermite
+         * précédent à calcHermite et retourne un vecteur calculé
          * 
          * @param n   Le degré \b n du polynôme souhaité
-         * @return Un vecteur (arma::vec) contenant 
-         * les valeurs du polynôme d'Hermite de degré \c n 
+         * @return Un vecteur (arma::vec) calculé pour le dégré n
+         * évalué en les points de zvals passés précédemment
+         * à calcHermite
          */
         arma::vec hermite(int n);
         
@@ -68,12 +68,13 @@
          * 
          * @param n dégré spécifique pour le polynôme à obtenir
          * @param m paramètre spécifique pour le polynôme à obtenir
-         * @return  Un vecteur (arma::vec) contenant 
-         * les valeurs du polynôme de Laguerre de degré \b n  et de
-         * paramètre \b m
+         * @return  Un vecteur (arma::vec) calculé pour le dégré n et le paramètre m
+         * évalué en les points de zvals passés précédemment
+         * à calcLaguerre
          */
         arma::vec laguerre(int n, int m);
 
-        
 
  }
+
+ #endif
