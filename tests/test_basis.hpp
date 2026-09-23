@@ -9,7 +9,8 @@
  * 
  */
 
-  #include "basis.hpp"
+  #include "../include/Basis.hpp"
+  #include <cxxtest/TestSuite.h>
 
  /**
     \brief Cette classe décrit les tests de la classe basis
@@ -24,5 +25,17 @@
     // MyClass myClass(2);
     // TS_ASSERT_EQUALS(myClass.myFunc(3), 5);
     // }
+
+
+   void setUp();
+
+   void tearDown();
+
+   void test_rPart_renvoie_la_valeur_attendue_pour_la_basis_function_R();
+   void test_ZPart_renvoie_la_valeur_attendue_pour_la_basis_function_Z();
+   void test_n_Max();
+   void test_n_zMax();
+
+
 
  };
