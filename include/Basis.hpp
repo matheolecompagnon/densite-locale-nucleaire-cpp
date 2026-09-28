@@ -75,7 +75,7 @@ class Basis {
          * @param r radius coordinate
          * @return arma::mat 
          */
-        arma::mat basisFunc(int m, int n, int n_z, arma::vec z, arma::vec r)
+        arma::mat basisFunc(int m, int n, int n_z, arma::vec z, arma::vec r);
 
     private:
         /**
@@ -98,6 +98,6 @@ class Basis {
          * 
          */
         double Q;
-}
+};
 
 #endif
