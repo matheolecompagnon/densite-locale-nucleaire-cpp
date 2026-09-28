@@ -9,7 +9,7 @@
  * 
  */
 
-  #include "../include/Basis.hpp"
+  #include "basis.hpp"
   #include <cxxtest/TestSuite.h>
   #include <numbers>
   #include <armadillo>
