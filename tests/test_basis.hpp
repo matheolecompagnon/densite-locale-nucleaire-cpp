@@ -47,7 +47,7 @@
       arma::vec res = arma::ones<arma::vec>(8);
       res = 0.2821 * res;
 
-      TS_ASSERT_DELTA(arma::norm(basis.rpart(r , 0 ,0 ) - res ),0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 0 ,0 ) - res ),0.0,  1e-15) ;
    }
 
    void test_rPart_en_etat_fondamental_partout(){
@@ -64,7 +64,7 @@
                      1.8252e-11
                   };
 
-      TS_ASSERT_DELTA(arma::norm(basis.rpart(r , 0 ,0 ) - res ),0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 0 ,0 ) - res ),0.0,  1e-15) ;
    }
 
    void test_rPart_en_partout_pour_n_et_m_different_de_0(){
@@ -82,7 +82,7 @@
                      -0.0001
                   };
 
-      TS_ASSERT_DELTA(arma::norm(basis.rpart(r , 2 ,5 ) - res ),0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 2 ,5 ) - res ),0.0,  1e-15) ;
    }
 
    void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_br(){
@@ -118,7 +118,7 @@
       arma::vec res = arma::ones<arma::vec>(8);
       res = 0.4751 * res;
 
-      TS_ASSERT_DELTA(arma::norm(basis.zpart(z , 0 ) - res ), 0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 0 ) - res ), 0.0,  1e-15) ;
    }
 
    void test_zPart_en_etat_fondamental_partout(){
@@ -135,21 +135,11 @@
                      0.4385
                   };
 
-      TS_ASSERT_DELTA(arma::norm(basis.zpart(z , 0 ) - res ),0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 0 ) - res ),0.0,  1e-15) ;
    }
 
    void test_zPart_en_partout_pour_nz_different_de_0(){
-      /**
-         * Remarque : absence d'un constructeur pour la classe basis
-         * donc impossible pour le moment de fixer un contexte précis
-         * dans ce test
-         * Ce test suppose que la valeur bz est fixée à 2.5
-         * Donc , si ce n'est pas celle utilisée plus tard 
-         * lors de l'implémentation de la fonction rpart
-         * il va falloir recalculer le résultat par rapport 
-         * auquel on fait le test. A discuter en groupe
-         * 
-         */
+      
       Basis basis(2,2.5,0,0);
       arma::vec z = {-4.5, -2.1, 0.0, 1.5, 3.8, 10.2, 2 ,1};
 
@@ -163,14 +153,24 @@
                      0.2695
                   };
 
-      TS_ASSERT_DELTA(arma::norm(basis.zpart(z , 5 ) - res ),0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 5 ) - res ),0.0,  1e-15) ;
    }
 
-   void test_sur_la_valeur_de_mMax(){
+   void test_sur_la_valeur_calculee_de_mMax(){
+      //m_max est calculee a partir des valeurs de N et Q
+      //On fixe ici N = 12 et Q = 1.2
+      Basis basis(1 , 1,  12 , 1.2) ; 
 
-      Basis basis(2,2.5,0,0);
-      TS_ASSERT_EQUALS(basis.mMax , 14);
-      //
+      int mMax_res = 12;
+
+      TS_ASSERT_EQUALS(basis.mMax , mMax_res) ;
+   }
+
+   void test_sur_la_matrice_nMax_calculee(){
+      //Pas finis
+      Basis basis(1 , 1,  11 , 1.2) ;
+      arma::ivec nMax_res = {7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1};
+      
    }
 
  };
