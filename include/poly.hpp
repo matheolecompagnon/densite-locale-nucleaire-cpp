@@ -104,5 +104,5 @@
          */
         arma::vec derivativeLaguerre(int m, int n);
 
- }
+ };
 #endif
