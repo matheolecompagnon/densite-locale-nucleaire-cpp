@@ -34,6 +34,8 @@
          * des fonctions calcHermite et calcLaguerre par un vecteur.
          */
         arma::mat evaluated_value;
+        int n;
+        int m;
 
         /**
          * @brief Calculer les valeurs des polynomes d'Hermite à partir de
