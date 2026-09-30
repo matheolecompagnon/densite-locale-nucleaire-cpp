@@ -22,7 +22,9 @@
  */
 
  class Poly {
-    private:
+
+
+    public:
         /**
          * @brief coefficients est une matrice pour stocker les coefficients 
          * des polynomes calculés avec les fonctions calcHermite et calcLaguerre
@@ -34,7 +36,6 @@
          * des fonctions calcHermite et calcLaguerre par un vecteur.
          */
         arma::mat evaluated_value;
-    public:
 
         /**
          * @brief Calculer les valeurs des polynomes d'Hermite à partir de
