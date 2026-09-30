@@ -1,6 +1,7 @@
 /**
  * @file test_basis.hpp
  * @author Mathéo LECOMPAGNON
+ * @author Jean-Marie ASSOGBA
  * @brief Ce fichier décrit les tests de la classe Basis.
  * @version 0.1
  * @date 2026-09-09
@@ -174,19 +175,22 @@
       TS_ASSERT((basis.nMax - nMax_res).iszero());      
    }
 
-   void test_sur_le_vecteur_nMax_calculee(){
+   void test_sur_le_matrice_n_zMax_calculee(){
       Basis basis(1 , 1,  10 , 1.2) ;
-      arma::ivec nMax_res = {6 ,5 ,5 ,4, 4, 3, 3, 2, 2, 1, 1};
+      arma::imat n_zMax_res = {
+         {12   ,     10 ,        8    ,     5,         3},
+        {11     ,    9   ,      6      ,   4  ,       2},
+        {10      ,   8    ,     5 ,        3   ,      0},
+        { 9       ,  6     ,    4  ,       2    ,     0},
+         {8        , 5      ,   3   ,      0     ,    0},
+         {6  ,       4       ,  2    ,     0      ,   0},
+         {5   ,      3  ,       0     ,    0       ,  0},
+        { 4    ,     2   ,      0      ,   0 ,        0},
+       {  3     ,    0    ,     0       ,  0  ,       0},
+        { 2      ,   0     ,    0 ,        0   ,      0}
+      };
 
-      TS_ASSERT((basis.nMax - nMax_res).iszero());      
+      TS_ASSERT((basis.n_zMax - n_zMax_res).iszero());      
    }
-
-   void test_sur_la_matrice_n_zMax_calculee(){
-      
-   }
-
-
-
-
 
  };

@@ -1,6 +1,7 @@
 /**
  * @file basis.hpp
  * @author Mathéo LECOMPAGNON
+ * @author Jean-Marie ASSOGBA
  * @brief Ce fichier décrit l'entête de la classe Basis.
  * @version 0.1
  * @date 2026-09-09
