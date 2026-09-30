@@ -34,6 +34,7 @@
          * des fonctions calcHermite et calcLaguerre par un vecteur.
          */
         arma::mat evaluated_value;
+
         int n;
         int m;
 
@@ -45,7 +46,7 @@
          * @param vect  Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
          */
-        void calcHermite(int n,arma::vec vect);
+        void calcHermite(int n, arma::vec& vect);
 
         /**
          * @brief  Récupère les résultats calculés lors de l'appel 
@@ -63,12 +64,12 @@
          * partir de deux entiers n et m et d'un vecteur vect , et remplir la 
          * matrice du polynome
          *
-         * @param n limite supérieure pour les dégrés (exclusive)
          * @param m limite supérieure pour les paramètres (exclusive)
+         * @param n limite supérieure pour les dégrés (exclusive)
          * @param vect Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
          */
-        void calcLaguerre(int m,int n,arma::vec vect);
+        void calcLaguerre(int m,int n,arma::vec& vect);
 
         /**
          * @brief aucune idée pour le moment
@@ -91,7 +92,7 @@
          * @param vect Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
          */
-        void calcDerivatveLaguerre(int m,int n,arma::vec vect);
+        void calcDerivativeLaguerre(int m,int n,arma::vec& vect);
 
         /**
          * @brief aucune idée pour le moment
@@ -104,5 +105,5 @@
          */
         arma::vec derivativeLaguerre(int m, int n);
 
- }
+ };
 #endif
