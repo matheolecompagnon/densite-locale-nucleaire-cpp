@@ -30,7 +30,7 @@
     // }
 
    void setUp(){
-    };
+   };
 
    void tearDown(){
    };
@@ -40,17 +40,6 @@
 
    void test_rPart_en_etat_fondamental_a_l_origine(){
 
-      /**
-         * Remarque : absence d'un constructeur pour la classe basis
-         * donc impossible pour le moment de fixer un contexte précis
-         * dans ce test
-         * Ce test suppose que la valeur br est fixée à 2
-         * Donc , si ce n'est pas celle utilisée plus tard 
-         * lors de l'implémentation de la fonction rpart
-         * il va falloir recalculer le résultat par rapport 
-         * auquel on fait le test. A discuter en groupe
-         * 
-         */
       Basis basis(2,0,0,0);
 
       arma::vec r = arma::zeros<arma::vec>(8);
@@ -62,17 +51,6 @@
    }
 
    void test_rPart_en_etat_fondamental_partout(){
-      /**
-         * Remarque : absence d'un constructeur pour la classe basis
-         * donc impossible pour le moment de fixer un contexte précis
-         * dans ce test
-         * Ce test suppose que la valeur br est fixée à 2
-         * Donc , si ce n'est pas celle utilisée plus tard 
-         * lors de l'implémentation de la fonction rpart
-         * il va falloir recalculer le résultat par rapport 
-         * auquel on fait le test. A discuter en groupe
-         * 
-         */
       Basis basis(2,0,0,0);
       arma::vec r = {3.1, 2.3, 1.0, 0.0, 0.1, 4.3, 9.2, 13.7};
 
@@ -90,17 +68,7 @@
    }
 
    void test_rPart_en_partout_pour_n_et_m_different_de_0(){
-      /**
-         * Remarque : absence d'un constructeur pour la classe basis
-         * donc impossible pour le moment de fixer un contexte précis
-         * dans ce test
-         * Ce test suppose que la valeur br est fixée à 2
-         * Donc , si ce n'est pas celle utilisée plus tard 
-         * lors de l'implémentation de la fonction rpart
-         * il va falloir recalculer le résultat par rapport 
-         * auquel on fait le test. A discuter en groupe
-         * 
-         */
+
       Basis basis(2,0,0,0);
       arma::vec r = {9.1, 6.3, 1.0, 4.0, 0.1, 0.3, 9.2, 13.7};
 
@@ -118,28 +86,24 @@
    }
 
    void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_br(){
-      //Meme remarque par rapport au constructeur
       Basis basis(2,0,0,0);
 
       TS_ASSERT_EQUALS(basis.br , 2);
    }
 
    void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_bz(){
-      //Meme remarque par rapport au constructeur
       Basis basis(2,5,0,0);
 
       TS_ASSERT_EQUALS(basis.bz , 5);
    }
 
    void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_N(){
-      //Meme remarque par rapport au constructeur
       Basis basis(2,5,3,0);
 
       TS_ASSERT_EQUALS(basis.N , 3);
    }
 
    void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_Q(){
-      //Meme remarque par rapport au constructeur
       Basis basis(2,5,3,4);
 
       TS_ASSERT_EQUALS(basis.Q , 4);
@@ -147,17 +111,6 @@
 
    void test_zPart_en_etat_fondamental_a_l_origine(){
 
-      /**
-         * Remarque : absence d'un constructeur pour la classe basis
-         * donc impossible pour le moment de fixer un contexte précis
-         * dans ce test
-         * Ce test suppose que la valeur bz est fixée à 2.5
-         * Donc , si ce n'est pas celle utilisée plus tard 
-         * lors de l'implémentation de la fonction rpart
-         * il va falloir recalculer le résultat par rapport 
-         * auquel on fait le test. A discuter en groupe
-         * 
-         */
       Basis basis(0,2.5,0,0);
 
       arma::vec z = arma::zeros<arma::vec>(8);
@@ -169,17 +122,6 @@
    }
 
    void test_zPart_en_etat_fondamental_partout(){
-      /**
-         * Remarque : absence d'un constructeur pour la classe basis
-         * donc impossible pour le moment de fixer un contexte précis
-         * dans ce test
-         * Ce test suppose que la valeur bz est fixée à 2.5
-         * Donc , si ce n'est pas celle utilisée plus tard 
-         * lors de l'implémentation de la fonction rpart
-         * il va falloir recalculer le résultat par rapport 
-         * auquel on fait le test. A discuter en groupe
-         * 
-         */
       Basis basis(2,2.5 ,0,0);
       arma::vec z = {-4.5, -2.1, 0.0, 1.5, 3.8, 10.2, 2 ,1};
 
@@ -225,10 +167,8 @@
    }
 
    void test_sur_la_valeur_de_mMax(){
-      
-      //Constructeur Ajouté
+
       Basis basis(2,2.5,0,0);
-      //suppose que mMax a ete mis à 14
       TS_ASSERT_EQUALS(basis.mMax , 14);
       //
    }
