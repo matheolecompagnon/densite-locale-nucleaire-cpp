@@ -12,11 +12,6 @@
 #ifndef __POLY_HPP__
 #define __POLY_HPP__
 
-<<<<<<< HEAD
-=======
-#endif
-
->>>>>>> origin/matheo_glessmer
 #include <armadillo>
 /**
  * @brief Cette classe définit la structure d'un polynome
@@ -42,13 +37,8 @@
         /**
          * @brief Calculer les valeurs des polynomes d'Hermite à partir de
          * d'un entier n et d'un vecteur vect et remplir la matrice du polynome
-<<<<<<< HEAD
-         * #endif
-         * @param n  limite supérieure pour les dégrés (exclusive)
-=======
          * 
-         * @param n  limite supésrieure pour les dégrés (exclusive)
->>>>>>> origin/matheo_glessmer
+         * @param n  limite supérieure pour les dégrés (exclusive)
          * @param vect  Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
          */
@@ -56,11 +46,12 @@
 
         /**
          * @brief  Récupère les résultats calculés lors de l'appel 
-         * précédent à calcHermite
+         * précédent à calcHermite et retourne un vecteur calculé
          * 
          * @param n   Le degré \b n du polynôme souhaité
-         * @return Un vecteur (arma::vec) contenant 
-         * les valeurs de l'evaluation du polynôme d'Hermite de degré \c n 
+         * @return Un vecteur (arma::vec) calculé pour le dégré n
+         * évalué en les points de zvals passés précédemment
+         * à calcHermite
          */
         arma::vec hermite(int n);
         
@@ -99,9 +90,5 @@
          */
         void calcDerivatveLaguerre(int n,int m,arma::vec vect);
 
-<<<<<<< HEAD
  }
 #endif
-=======
- }
->>>>>>> origin/matheo_glessmer
