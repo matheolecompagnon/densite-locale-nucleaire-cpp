@@ -66,7 +66,7 @@
          * @param vect Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
          */
-        void calcLaguerre(int n,int m,arma::vec vect);
+        void calcLaguerre(int m,int n,arma::vec vect);
 
         /**
          * @brief aucune idée pour le moment
@@ -77,7 +77,7 @@
          * les valeurs de l'évaluation du polynôme de Laguerre de degré \b n  et de
          * paramètre \b m
          */
-        arma::vec laguerre(int n, int m);
+        arma::vec laguerre(int m, int m);
 
         /**
          * @brief Calculer les valeurs de la dérivé des polynômes généralisés de Laguerre à
@@ -89,6 +89,17 @@
          * @param vect Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
          */
-        void calcDerivatveLaguerre(int n,int m,arma::vec vect);
+        void calcDerivatveLaguerre(int m,int n,arma::vec vect);
+
+        /**
+         * @brief aucune idée pour le moment
+         * 
+         * @param n dégré spécifique pour la dérivée du polynôme à obtenir
+         * @param m paramètre spécifique pour le polynôme à obtenir
+         * @return  Un vecteur (arma::vec) contenant 
+         * les valeurs de l'évaluation du polynôme de Laguerre de degré \b n  et de
+         * paramètre \b m
+         */
+        arma::vec derivativeLaguerre(int m, int n);
 
  }
