@@ -21,14 +21,14 @@ unit_test: OPTIONS := $(OPTIONS_RELEASE)
 unit_test: tests
 unit_debug: tests
 
-files := Basis Poly
+files := basis poly
 objects := $(files:%=./bin/%.o)
 
-test_dependencies := bin/Basis.o bin/Poly.o
+test_dependencies := bin/basis.o bin/poly.o
 test_headers := tests/test_basis.hpp tests/test_mandatory.hpp tests/test_poly.hpp
 test_generated_cpp := bin/t.cpp
 test_generated_obj := bin/t.o
-test_exec := tests
+test_exec := test
 
 run : $(objects)
 	$(CXX) -o exec ./src/main.cpp $^ $(OPTIONS)
