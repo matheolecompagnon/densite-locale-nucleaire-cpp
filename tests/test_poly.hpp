@@ -82,14 +82,14 @@
       TS_ASSERT_DELTA(arma::norm(computed_h3_rnd / computed_h3_neg_rnd  + 1.0), 0.0, 1e-08); //ici plus car H3 doit être antisymétrique
 
       // Test des valeur calculé à la main pour H5
-      arma::vec result_h3 = {3816.0,80600.0,483784.0};
-      arma::vec computed_h3 = poly.hermite(3);
-      TS_ASSERT_DELTA(arma::norm(result_h3 / computed_h3  - 1.0), 0.0, 1e-08);
+      arma::vec result_h5 = {3816.0,80600.0,483784.0};
+      arma::vec computed_h5 = poly.hermite(3);
+      TS_ASSERT_DELTA(arma::norm(result_h5 / computed_h5  - 1.0), 0.0, 1e-08);
 
       // Test d'antisymetrie H4
       arma::vec computed_h4_rnd = poly_rnd.hermite(4);
       arma::vec computed_h4_neg_rnd = poly_neg_rnd.hermite(4);
-      TS_ASSERT_DELTA(arma::norm(computed_h4_rnd / omputed_h4_neg_rnd  - 1.0), 0.0, 1e-08); //ici moins car H4 doit être symétrique
+      TS_ASSERT_DELTA(arma::norm(computed_h4_rnd / computed_h4_neg_rnd  - 1.0), 0.0, 1e-08); //ici moins car H4 doit être symétrique
 
       // Test d'antisymetrie H5
       arma::vec computed_h5_rnd = poly_rnd.hermite(5);
