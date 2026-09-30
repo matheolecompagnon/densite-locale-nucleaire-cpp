@@ -1,5 +1,5 @@
 /**
- * @file Basis.cpp
+ * @file basis.cpp
  * @author Mathéo LECOMPAGNON
  * @brief Ce fichier décrit l'implémentation de la classe Basis.
  * @version 0.1
@@ -8,4 +8,4 @@
  * @copyright Copyright (c) 2026
  * 
  */
-#include "Basis.hpp"
+#include "basis.hpp"

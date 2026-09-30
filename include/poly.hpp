@@ -1,5 +1,5 @@
 /**
- * @file Poly.hpp
+ * @file poly.hpp
  * @author Mathéo LECOMPAGNON
  * @author Jean-Marie ASSOGBA
  * @brief Ce fichier décrit l'entête de la classe Poly.
@@ -11,8 +11,6 @@
  */
 #ifndef __POLY_HPP__
 #define __POLY_HPP__
-
-#endif
 
 #include <armadillo>
 /**
@@ -41,7 +39,7 @@
          * @brief Calculer les valeurs des polynomes d'Hermite à partir de
          * d'un entier n et d'un vecteur vect et remplir la matrice du polynome
          * 
-         * @param n  limite supésrieure pour les dégrés (exclusive)
+         * @param n  limite supérieure pour les dégrés (exclusive)
          * @param vect  Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
          */
@@ -49,11 +47,12 @@
 
         /**
          * @brief  Récupère les résultats calculés lors de l'appel 
-         * précédent à calcHermite
+         * précédent à calcHermite et retourne un vecteur calculé
          * 
          * @param n   Le degré \b n du polynôme souhaité
-         * @return Un vecteur (arma::vec) contenant 
-         * les valeurs de l'evaluation du polynôme d'Hermite de degré \c n 
+         * @return Un vecteur (arma::vec) calculé pour le dégré n
+         * évalué en les points de zvals passés précédemment
+         * à calcHermite
          */
         arma::vec hermite(int n);
         
@@ -104,3 +103,4 @@
         arma::vec derivativeLaguerre(int m, int n);
 
  }
+#endif

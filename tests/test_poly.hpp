@@ -59,7 +59,7 @@
       // Test d'antisymetrie H1
       arma::vec computed_h1_rnd = poly_rnd.hermite(1);
       arma::vec computed_h1_neg_rnd = poly_neg_rnd.hermite(1);
-      TS_ASSERT_DELTA(arma::norm(computed_h1_rnd / omputed_h1_neg_rnd  + 1.0), 0.0, 1e-08); //ici plus car H1 doit être antisymétrique
+      TS_ASSERT_DELTA(arma::norm(computed_h1_rnd / computed_h1_neg_rnd  + 1.0), 0.0, 1e-08); //ici plus car H1 doit être antisymétrique
 
       // Test des valeur calculé à la main pour H2
       arma::vec result_h2 = {34.0,98.0,194.0};
@@ -69,7 +69,7 @@
       // Test d'antisymetrie H2
       arma::vec computed_h2_rnd = poly_rnd.hermite(2);
       arma::vec computed_h2_neg_rnd = poly_neg_rnd.hermite(2);
-      TS_ASSERT_DELTA(arma::norm(computed_h2_rnd / omputed_h2_neg_rnd  - 1.0), 0.0, 1e-08); //ici moins car H2 doit être symétrique
+      TS_ASSERT_DELTA(arma::norm(computed_h2_rnd / computed_h2_neg_rnd  - 1.0), 0.0, 1e-08); //ici moins car H2 doit être symétrique
 
       // Test des valeur calculé à la main pour H3
       arma::vec result_h3 = {180.0,940.0,2660.0};
@@ -79,7 +79,7 @@
       // Test d'antisymetrie H3
       arma::vec computed_h3_rnd = poly_rnd.hermite(3);
       arma::vec computed_h3_neg_rnd = poly_neg_rnd.hermite(3);
-      TS_ASSERT_DELTA(arma::norm(computed_h3_rnd / omputed_h3_neg_rnd  + 1.0), 0.0, 1e-08); //ici plus car H3 doit être antisymétrique
+      TS_ASSERT_DELTA(arma::norm(computed_h3_rnd / computed_h3_neg_rnd  + 1.0), 0.0, 1e-08); //ici plus car H3 doit être antisymétrique
 
       // Test des valeur calculé à la main pour H5
       arma::vec result_h3 = {3816.0,80600.0,483784.0};
@@ -94,7 +94,7 @@
       // Test d'antisymetrie H5
       arma::vec computed_h5_rnd = poly_rnd.hermite(5);
       arma::vec computed_h5_neg_rnd = poly_neg_rnd.hermite(5);
-      TS_ASSERT_DELTA(arma::norm(computed_h5_rnd / omputed_h5_neg_rnd  + 1.0), 0.0, 1e-08); //ici plus car H5 doit être antisymétrique
+      TS_ASSERT_DELTA(arma::norm(computed_h5_rnd / computed_h5_neg_rnd  + 1.0), 0.0, 1e-08); //ici plus car H5 doit être antisymétrique
     }
 
    /**
