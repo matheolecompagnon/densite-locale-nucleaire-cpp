@@ -86,7 +86,6 @@ class Basis {
          */
         arma::mat basisFunc(int m, int n, int n_z, arma::vec z, arma::vec r);
 
-    private:
         /**
          * @brief basis deformation parameter br
          * 
