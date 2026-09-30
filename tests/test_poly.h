@@ -133,7 +133,7 @@
       evaluatingPoints = {3.0, 5.0, 7.0};
       poly.calcLaguerre(mMax, nMaxGlobal, evaluatingPoints);
       poly_rnd.calcLaguerre(mMax, nMaxGlobal, rnd_points);
-      derivative_rnd.calcDerivatveLaguerre(mMax, nMaxGlobal, rnd_points);
+      derivative_rnd.calcDerivativeLaguerre(mMax, nMaxGlobal, rnd_points);
 
       // Les tests à la main utilisent une différence absolue (et non un rapport)
       // car L_1^2(3) = 0 empêcherait la division
