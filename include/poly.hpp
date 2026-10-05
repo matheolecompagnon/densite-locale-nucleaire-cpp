@@ -46,19 +46,17 @@
          * @param vect  Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
          */
-        void calcHermite(int n, arma::vec& vect);
+        void calcHermite(int n, const arma::vec& vect);
 
         /**
-         * @brief  Récupère les résultats calculés lors de l'appel 
-         * précédent à calcHermite et retourne un vecteur calculé
+         * @brief aucune idée pour le moment
          * 
-         * @param n   Le degré \b n du polynôme souhaité
-         * @return Un vecteur (arma::vec) calculé pour le dégré n
-         * évalué en les points de zvals passés précédemment
-         * à calcHermite
+         * @param n dégré spécifique pour le polynôme à obtenir
+         * @return  Un vecteur (arma::vec) contenant 
+         * les valeurs de l'évaluation du polynôme d'Hermite de degré \b n
          */
         arma::vec hermite(int n);
-        
+
         /**
          * @brief Calculer les valeurs des polynômes généralisés de Laguerre à
          * partir de deux entiers n et m et d'un vecteur vect , et remplir la 
@@ -69,7 +67,7 @@
          * @param vect Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
          */
-        void calcLaguerre(int m,int n,arma::vec& vect);
+        void calcLaguerre(int m,int n, constarma::vec& vect);
 
         /**
          * @brief aucune idée pour le moment
