@@ -67,7 +67,7 @@
          * @param vect Le vecteur qui contient les valeurs (les points d'abcisse z)
          * sur lesquels les polynômes doivent etre évalués
          */
-        void calcLaguerre(int m,int n, constarma::vec& vect);
+        void calcLaguerre(int m,int n, const arma::vec& vect);
 
         /**
          * @brief aucune idée pour le moment
