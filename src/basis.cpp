@@ -29,15 +29,15 @@ int factoriel(int n) {
 
 /**
  * @brief Cette fonction calcule la partie radiale de la fonction de base 
- * pour un vecteur r donné, un nombre quantique m et un nombre quantique n_z.
+ * pour un vecteur r donné, un nombre quantique m et un nombre quantique n.
  * 
  * @param r 
  * @param m 
- * @param n_z 
+ * @param n 
  * @return arma::vec 
  */
 
-arma::vec Basis::rPart(arma::vec r, int m, int n_z) {
+arma::vec Basis::rPart(arma::vec r, int m, int n) {
     /**
      * @brief Implémentation de la fonction de base pour la partie radiale
      * 
@@ -45,7 +45,7 @@ arma::vec Basis::rPart(arma::vec r, int m, int n_z) {
     int abs_m = std::abs(m);
 
     //Calculer le facteur de normalisation
-    double facteur = (1.0 / (br * std::sqrt(M_PI))) * std::sqrt(factoriel(n_z) / factoriel(n_z + abs_m));
+    double facteur = (1.0 / (br * std::sqrt(M_PI))) * std::sqrt(factoriel(n) / factoriel(n + abs_m));
 
     //Calculer les puissances et l'exponentielle
     arma::vec puissance = arma::square(r) / (br * br);
@@ -57,8 +57,8 @@ arma::vec Basis::rPart(arma::vec r, int m, int n_z) {
     arma::vec fact_mat = arma::pow(r / br, abs_m);
 
     //Calculer les polynômes de Laguerre
-    poly::calcLaguerre(abs_m + 1, n_z + 1, puissance);
-    arma::vec laguerre = poly::laguerre(abs_m, n_z);
+    Poly::calcLaguerre(abs_m + 1, n + 1, puissance);
+    arma::vec laguerre = Poly::laguerre(abs_m, n);
 
     //Combiner tous les éléments pour obtenir la fonction de base radiale
     return facteur * fact_mat % laguerre % exponentielle;
@@ -72,13 +72,13 @@ arma::vec Basis::rPart(arma::vec r, int m, int n_z) {
  * @param n
  * @return arma::vec
  */
-arma::vec Basis::zPart(arma::vec z, int n) {
+arma::vec Basis::zPart(arma::vec z, int n_z) {
     /**
      * @brief Implémentation de la fonction de base pour la partie z
      * 
      */
     //Calculer le facteur de normalisation
-    double facteur = 1.0 / (std::sqrt(bz) * sqrt(std::pow(2.0, n) * factoriel(n) * std::sqrt(M_PI)));
+    double facteur = 1.0 / (std::sqrt(bz) * sqrt(std::pow(2.0, n_z) * factoriel(n_z) * std::sqrt(M_PI)));
 
     //Calculer les puissances et l'exponentielle
     arma::vec puissance = arma::square(z) / (bz * bz);
@@ -87,10 +87,17 @@ arma::vec Basis::zPart(arma::vec z, int n) {
     arma::vec exponentielle = arma::exp(-puissance / 2.0);
 
     //Calculer les polynômes d'Hermite
-    poly::calcHermite(n + 1, puissance);
-    arma::vec hermite = poly::hermite(n);
+    Poly::calcHermite(n_z + 1, puissance);
+    arma::vec hermite = Poly::hermite(n_z);
 
     //Combiner tous les éléments pour obtenir la fonction de base z
     return facteur * hermite % exponentielle;
 }
 
+
+arma::mat Basis::basisFunc(int m , int n , int n_z , arma::vec z, arma::vec r) {
+    arma::mat zpart = zPart(z, n_z);
+    arma::mat rpart = rPart(r, m, n);
+
+    return rpart % zpart ;
+}

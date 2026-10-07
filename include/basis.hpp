@@ -14,6 +14,7 @@
 
 #include <armadillo>
 #include "poly.hpp"
+#include <complex>
 
 class Basis {
     public:
@@ -51,7 +52,7 @@ class Basis {
          * @param n_z quantum number
          * @return arma::vec 
          */
-        arma::vec rPart(arma::vec r, int m, int n_z);
+        arma::vec rPart(arma::vec r, int m, int n);
         /**
          * @brief Basis function for the Z axis part
          * 
@@ -59,7 +60,7 @@ class Basis {
          * @param n quantum number
          * @return arma::vec 
          */
-        arma::vec zPart(arma::vec z, int n);
+        arma::vec zPart(arma::vec z, int n_z);
         /**
          * @brief Maximum value n for fixed m quantum number
          * 
