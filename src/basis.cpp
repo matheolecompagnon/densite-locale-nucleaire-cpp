@@ -54,14 +54,14 @@ arma::vec Basis::rPart(arma::vec r, int m, int n) {
     arma::vec exponentielle = arma::exp(-puissance / 2.0);
 
     
-    arma::vec fact_mat = arma::pow(r / br, abs_m);
+    arma::vec fact_vec = arma::pow(r / br, abs_m);
 
     //Calculer les polynômes de Laguerre
     Poly::calcLaguerre(abs_m + 1, n + 1, puissance);
     arma::vec laguerre = Poly::laguerre(abs_m, n);
 
     //Combiner tous les éléments pour obtenir la fonction de base radiale
-    return facteur * fact_mat % laguerre % exponentielle;
+    return facteur * fact_vec % laguerre % exponentielle;
 }
 
 /**4
@@ -96,8 +96,10 @@ arma::vec Basis::zPart(arma::vec z, int n_z) {
 
 
 arma::mat Basis::basisFunc(int m , int n , int n_z , arma::vec z, arma::vec r) {
-    arma::mat zpart = zPart(z, n_z);
-    arma::mat rpart = rPart(r, m, n);
+    //Calcul de r_part et z_part 
+    arma::vec r_part = rPart(r, m, n);
+    arma::vec z_part = zPart(z, n_z);
 
-    return rpart % zpart ;
+    // Produit tensoriel pour obtenir la matrice finale
+    return z_part * r_part.t(); 
 }
