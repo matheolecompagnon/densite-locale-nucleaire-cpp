@@ -13,6 +13,7 @@
 #define __BASIS_HPP__
 
 #include <armadillo>
+#include "poly.hpp"
 
 class Basis {
     public:
