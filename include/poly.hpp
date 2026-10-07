@@ -77,7 +77,7 @@
          * les valeurs de l'évaluation du polynôme de Laguerre de degré \b n  et de
          * paramètre \b m
          */
-        arma::vec laguerre(int m, int m);
+        arma::vec laguerre(int m, int n);
 
         /**
          * @brief Calculer les valeurs de la dérivé des polynômes généralisés de Laguerre à
