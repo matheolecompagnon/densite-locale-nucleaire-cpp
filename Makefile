@@ -1,42 +1,68 @@
-#variable stockant le compilateur C++ utilisé
-CXX := g++
+CXX        := g++
+CXXTESTGEN := cxxtestgen
 
-#variables stockant les otions de compilation de base ainsi qu'un mode debug
-OPTIONS := -Wall -Wextra -Werror -Iinclude
-DEBUG_FLAGS := -g3 -Og -fsanitize=undefined,address -fno-omit-frame-pointer
+OPTIONS_COMMON  := -Wall -Wextra -Werror -Iinclude
+OPTIONS_DEBUG   := $(OPTIONS_COMMON) -g -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer
+OPTIONS_RELEASE := $(OPTIONS_COMMON) -O2
+DEPFLAGS        := -MMD -MP
+LDLIBS          := -larmadillo
 
-#variable stockant le nom des fichiers à compiler
-files := main Basis Poly
-#variable construit pat une régles qui prend le nom des fichier et les cherchers dans bin
-objects := $(files:%=./bin/%.o)
-objects_debug := $(files:%=./bin/%.o)
+# Options par défaut (surchargées par les cibles debug, release et test)
+OPTIONS := $(OPTIONS_DEBUG)
 
+files   := basis poly
+objects := $(files:%=bin/%.o)
 
-#régle de base qu'executera le MakeFile
-run : $(objects)
-	$(CXX) -o exec $^ $(OPTIONS)
-	@echo "\n\n========== Debut Affichage Programme ==========\n\n"
-	@./exec
-	@echo "\n\n========== Fin Affichage Programme ==========\n\n"
+main_exec    := exec
+test_headers := tests/test_basis.h tests/test_mandatory.h tests/test_poly.h
+test_cpp     := bin/tests.cpp
+test_obj     := bin/tests.o
+test_exec    := bin/test
 
-#régle de compilation des fichiers objets
-$(objects): ./bin/%.o: ./src/%.cpp #on change les cible .o en cible .c dans le bon fichier
-	$(CXX) -c $^ -o $@ $(OPTIONS) 
+.PHONY: all debug release run test clean
 
-#régle de debug pour le MakeFile
-debug : $(objects_debug)
-	$(CXX) -o exec $^ $(OPTIONS) $(DEBUG_FLAG)
-	@echo "\n\n========== Debut Affichage Programme ==========\n\n"
-	@./exec
-	@echo "\n\n========== Fin Affichage Programme ==========\n\n"
+all: debug
 
-#régle de compilation des fichiers objets
-$(objects_debug): ./bin/%.o: ./src/%.cpp #on change les cible .o en cible .c dans le bon fichier
-	$(CXX) -c $^ -o $@ $(OPTIONS) $(DEBUG_FLAG)
+debug: OPTIONS := $(OPTIONS_DEBUG)
+debug: run
 
-#régle pour netoyer le depot avant de push sur le git
-clean :
-	rm -f $(objects)
-	rm -f exec
+release: OPTIONS := $(OPTIONS_RELEASE)
+release: run
 
+# ---------- Programme principal ----------
+run: $(main_exec)
+	@printf "\n\n========== Debut Affichage Programme ==========\n\n"
+	@./$(main_exec)
+	@printf "\n\n========== Fin Affichage Programme ==========\n\n"
 
+$(main_exec): src/main.cpp $(objects)
+	$(CXX) $(OPTIONS) $^ -o $@ $(LDLIBS)
+
+# ---------- Tests unitaires (CxxTest) ----------
+test: OPTIONS := $(OPTIONS_DEBUG)
+test: $(test_exec)
+	@printf "\n\n========== Execution de la Suite de Tests ==========\n\n"
+	@./$(test_exec)
+	@printf "\n\n====================================================\n\n"
+
+$(test_exec): $(test_obj) $(objects)
+	$(CXX) $(OPTIONS) $^ -o $@ $(LDLIBS)
+
+$(test_obj): $(test_cpp)
+	$(CXX) $(OPTIONS) -c $< -o $@
+
+$(test_cpp): $(test_headers) | bin
+	$(CXXTESTGEN) --error-printer -o $@ $(test_headers)
+
+# ---------- Compilation des sources ----------
+bin/%.o: src/%.cpp | bin
+	$(CXX) $(OPTIONS) $(DEPFLAGS) -c $< -o $@
+
+bin:
+	mkdir -p $@
+
+# Recompile automatiquement si un header change (fichiers .d générés par -MMD)
+-include $(objects:.o=.d)
+
+clean:
+	rm -rf bin $(main_exec)
