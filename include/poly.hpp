@@ -28,12 +28,6 @@
          * des polynomes calculés avec les fonctions calcHermite et calcLaguerre
          */
         arma::mat coefficients;
-        /**
-         * @brief evaluated_value est une matrice pour stocker les resultats de l'évaluation
-         * des polynomes stocké dans coefficients en des valeurs qui sont passées en parametre
-         * des fonctions calcHermite et calcLaguerre par un vecteur.
-         */
-        arma::mat evaluated_value;
 
         int n;
         int m;
