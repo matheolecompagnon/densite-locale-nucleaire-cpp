@@ -8,7 +8,3 @@
  * @copyright Copyright (c) 2026
  * 
  */
-
-int main(int argc, char** argv){
-    return 0;
-}
