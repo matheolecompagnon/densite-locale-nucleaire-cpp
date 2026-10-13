@@ -281,4 +281,34 @@
       TS_ASSERT((basis.n_zMax - n_zMax_res).iszero());      
    }
 
+   /**
+    * @brief On teste ici la fonction basisFunc qui combine les deux parties 
+    * de la fonction de base (R et Z) pour un vecteur r et un vecteur z donnés, 
+    * ainsi que des nombres quantiques m, n et n_z
+    * 
+    */
+
+   void test_basisfunc() {
+      Basis basis(2 , 2.5,  0 , 0) ;
+
+      arma::vec r = {9.1, 6.3, 1.0, 4.0, 0.1, 0.3};
+
+      arma::vec z = {-4.5, -2.1, 0.0, 1.5, 3.8 };
+
+      arma::vec res_r = {0.0037, 0.0807, 0.1639, -0.0441, 0.0243, 0.0708};
+      arma::vec res_z = {-0.3400, 0.2572, 0.0, -0.3134, 0.2128};
+
+      arma::mat res_basis = {
+         {-0.0012, -0.0274, -0.0557, 0.0150, -0.0083, -0.0241},
+         {0.0009, 0.0208, 0.0422, -0.0113, 0.0063, 0.0182},
+         {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000},
+         {-0.0012, -0.0253, -0.0514, 0.0138, -0.0076, -0.0222},
+         {0.0008, 0.0172, 0.0349, -0.0094, 0.0052, 0.0151}
+      };
+
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 1 ,2 ) - res_r ),0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 3 ) - res_z ),0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.basisFunc(1 , 2 , 3 , z , r ) - res_basis ),0.0,  1e-15) ;
+   }
+
  };
