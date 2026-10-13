@@ -1,69 +1,68 @@
-CXX := g++
+CXX        := g++
+CXXTESTGEN := cxxtestgen
 
-OPTIONS_DEBUG := -Wall -Wextra -Werror -g -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -Iinclude
-OPTIONS_RELEASE := -Wall -Wextra -Werror -O2 -Iinclude
+OPTIONS_COMMON  := -Wall -Wextra -Werror -Iinclude
+OPTIONS_DEBUG   := $(OPTIONS_COMMON) -g -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer
+OPTIONS_RELEASE := $(OPTIONS_COMMON) -O2
+DEPFLAGS        := -MMD -MP
+LDLIBS          := -larmadillo
 
+# Options par défaut (surchargées par les cibles debug, release et test)
 OPTIONS := $(OPTIONS_DEBUG)
 
-debug: OPTIONS := $(OPTIONS_DEBUG)
-release: OPTIONS := $(OPTIONS_RELEASE)
+files   := basis poly
+objects := $(files:%=bin/%.o)
 
-.PHONY: all debug release run clean test
+main_exec    := exec
+test_headers := tests/test_basis.h tests/test_mandatory.h tests/test_poly.h
+test_cpp     := bin/tests.cpp
+test_obj     := bin/tests.o
+test_exec    := bin/test
+
+.PHONY: all debug release run test clean
 
 all: debug
+
+debug: OPTIONS := $(OPTIONS_DEBUG)
 debug: run
+
+release: OPTIONS := $(OPTIONS_RELEASE)
 release: run
 
+# ---------- Programme principal ----------
+run: $(main_exec)
+	@printf "\n\n========== Debut Affichage Programme ==========\n\n"
+	@./$(main_exec)
+	@printf "\n\n========== Fin Affichage Programme ==========\n\n"
 
-unit_debug: OPTIONS := $(OPTIONS_DEBUG)
-unit_test: OPTIONS := $(OPTIONS_RELEASE)
+$(main_exec): src/main.cpp $(objects)
+	$(CXX) $(OPTIONS) $^ -o $@ $(LDLIBS)
 
-unit_test: tests
-unit_debug: tests
-
-files := basis poly
-objects := $(files:%=./bin/%.o)
-
-test_dependencies := bin/basis.o bin/poly.o
-test_headers := tests/test_basis.hpp tests/test_mandatory.hpp tests/test_poly.hpp
-test_generated_cpp := bin/t.cpp
-test_generated_obj := bin/t.o
-test_exec := test
-
-run : $(objects)
-	$(CXX) -o exec ./src/main.cpp $^ $(OPTIONS)
-	@echo "\n\n========== Debut Affichage Programme ==========\n\n"
-	@./exec
-	@echo "\n\n========== Fin Affichage Programme ==========\n\n"
-
-tests : $(objects)
-	$(CXX) -o exec ./tests/main_tests.cpp $^ $(OPTIONS)
-	@echo "\n\n========== Debut Affichage Programme ==========\n\n"
-	@./exec
-	@echo "\n\n========== Fin Affichage Programme ==========\n\n"
-
-test: $(test_generated_obj) $(test_dependencies)
-	$(CXX) $(OPTIONS) $^ -o $(test_exec)
-	@echo "\n\n========== Execution de la Suite de Tests ==========\n\n"
+# ---------- Tests unitaires (CxxTest) ----------
+test: OPTIONS := $(OPTIONS_DEBUG)
+test: $(test_exec)
+	@printf "\n\n========== Execution de la Suite de Tests ==========\n\n"
 	@./$(test_exec)
-	@echo "\n\n====================================================\n\n"
+	@printf "\n\n====================================================\n\n"
 
-$(objects): ./bin/%.o: ./src/%.cpp
-	@mkdir -p bin
+$(test_exec): $(test_obj) $(objects)
+	$(CXX) $(OPTIONS) $^ -o $@ $(LDLIBS)
+
+$(test_obj): $(test_cpp)
 	$(CXX) $(OPTIONS) -c $< -o $@
 
+$(test_cpp): $(test_headers) | bin
+	$(CXXTESTGEN) --error-printer -o $@ $(test_headers)
 
-$(test_generated_cpp): $(test_headers)
-	@mkdir -p bin
-	cxxtestgen --error-printer -o $@ $(test_headers)
+# ---------- Compilation des sources ----------
+bin/%.o: src/%.cpp | bin
+	$(CXX) $(OPTIONS) $(DEPFLAGS) -c $< -o $@
 
+bin:
+	mkdir -p $@
 
-$(test_generated_obj): $(test_generated_cpp)
-	$(CXX) $(OPTIONS) -c $< -o $@
+# Recompile automatiquement si un header change (fichiers .d générés par -MMD)
+-include $(objects:.o=.d)
 
-
-clean :
-	rm -f $(objects) exec $(test_exec)
-	rm -rf bin
-
-
+clean:
+	rm -rf bin $(main_exec)

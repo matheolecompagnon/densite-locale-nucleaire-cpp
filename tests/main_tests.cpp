@@ -8,10 +8,14 @@
  * @copyright Copyright (c) 2026
  * 
  */
-#include "Basis.hpp"
-#include "Poly.hpp"
+#include "basis.hpp"
+#include "poly.hpp"
+#include "test_mandatory.hpp"
+//#include "test_basis.hpp"
+#include "test_poly.hpp"
 #include <armadillo>
 #include <cmath>
+
 
 #include <iostream>
 #include <string>
@@ -25,5 +29,9 @@ int main(void) {
     testMandatory.testMandatory1();
     testMandatory.testMandatory2();
     testMandatory.testMandatory3();
+
+    TestPoly test_poly;
+    test_poly.testHermite();
+    test_poly.testLaguerre();
     return 0;
 }

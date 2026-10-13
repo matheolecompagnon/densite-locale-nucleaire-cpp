@@ -129,4 +129,4 @@
                             2.44977220882127e-01};
         TS_ASSERT_DELTA(arma::norm(basis.zPart(z, 15) - res15), 0.0, 1e-15);
     }
- }
+ };
