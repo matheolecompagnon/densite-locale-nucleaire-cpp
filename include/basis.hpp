@@ -15,6 +15,7 @@
 #include <armadillo>
 #include "poly.hpp"
 #include <complex>
+#include "truncation.hpp"
 
 class Basis {
     public:
@@ -61,21 +62,7 @@ class Basis {
          * @return arma::vec 
          */
         arma::vec zPart(arma::vec z, int n_z);
-        /**
-         * @brief Maximum value n for fixed m quantum number
-         * 
-         * @param m quantum number
-         * @return int 
-         */
-        int nMax(int m);
-        /**
-         * @brief Maximum value n_z for fixed m and n quantum numbers
-         * 
-         * @param m quantum number
-         * @param n quantum number
-         * @return int 
-         */
-        int n_zMax(int m, int n);
+        
 
         /**
          * @brief 

@@ -16,6 +16,29 @@ Basis::Basis(double _br, double _bz, int _N, double _Q) : br(_br), bz(_bz), N(_N
      * @brief Calculer mmax, nMax et n_zMax en fonction de N et Q (Troncation)
      * 
      */
+    //Appel à la fonctions de troncature pour calculer mMax
+    Basis::mMax = m_max( _N, _Q);
+
+
+    //Une fois mMax calculé, on peut calculer nMax et n_zMax
+    //On initialise nMax avec de taille mMax et n_zMax a une matrice de taille mMax
+    Basis::nMax.zeros(Basis::mMax) ;
+
+    //Calculer nMax pour chaque m
+    for(int m = 0; m < Basis::mMax ; ++m) {
+        Basis::nMax(m) = n_max(Basis::mMax , m);
+    }
+
+    //initialiser n_zMax avec une matrice de taille mMax x nMax.max()
+    Basis::n_zMax.zeros(Basis::mMax, Basis::nMax.max());
+
+    //Calculer n_zMax pour chaque combinaison de m et n
+    for(int m = 0; m < Basis::mMax ; ++m) {
+        for(int n = 0; n <= Basis::nMax(m) ; ++n) {
+            Basis::n_zMax(m, n) = nz_max(m, n, _N, _Q);
+        }
+    }
+
 }
 
 int factoriel(int n) {
