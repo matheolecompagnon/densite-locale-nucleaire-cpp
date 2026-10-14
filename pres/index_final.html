@@ -192,16 +192,19 @@ $$`
 ]
 
 .row[
-.column.w50[
+.column.w30[
 ## Partie axiale
+]
 `$$
 Z(z, n_z) \equiv \frac{1}{\sqrt{b_z}}
 \frac{1}{\sqrt{2^{n_z} \sqrt{\pi}n_z!}}
 e^{-\frac{z^2}{2b_z^2}}H_{n_z}\left(\frac{z}{b_z}\right)
 $$`
 ]
-.column.w50[
+.row[
+.column.w30[
 ## Partie radiale
+]
 `$$
 R(r_\perp, m, n) \equiv \frac{1}{b_{\perp}\sqrt{\pi}}
 \sqrt{\frac{n!}{(n+|m|)!}}
@@ -210,7 +213,7 @@ e^{-\frac{r_{\perp}^2}{2b_{\perp}^2}}
 L_n^{|m|}\left(\frac{r_{\perp}^2}{b_{\perp}^2}\right)
 $$`
 ]
-]
+
 
 Comme `$\rho_{ab}=\delta_{m_a,m_b}\rho_{ab}$`,
 
@@ -229,7 +232,7 @@ Soit `$n \in \mathbb{N}$` le degré, `$m \in \mathbb{N}$` le paramètre de Lague
 
 .row[
 .column.w50[
-## Hermite : `calcHermite`, `hermite`
+## Hermite
 `$$
 \begin{aligned}
 H_0(\zeta)&=1\\
@@ -239,7 +242,7 @@ H_{n}(\zeta)&=2\zeta H_{n-1}(\zeta)-2(n-1)H_{n-2}(\zeta)
 $$`
 ]
 .column.w50[
-## Laguerre généralisés : `calcLaguerre`, `laguerre`
+## Laguerre généralisés
 `$$
 \begin{aligned}
 L^{m}_0(\eta)&=1\\
@@ -251,7 +254,7 @@ $$`
 ]
 ]
 
-Calcul par récurrence
+Définitions par récurrence
 
 ---
 
@@ -319,9 +322,9 @@ class: top
 
 |        Nom      | Algorithme et wrapper   | Resultats |Présentation                                 |
 |:-------------|:------------------------|:----------|:-----------------------------------|
-| M. Glessmer  | Fait                 |           | Optimisation, wrapper, algorithme |
-| J.M. Assogba | X                    |           | Expication implémentation de Basis                             |
-| M. Lecompa.  | X                    |           | Structure fond et forme                      |
+| M. Glessmer  | Fait                 | Visualisation  | Optimisation, wrapper, algorithme |
+| J.M. Assogba | X                    | Benchmark | Expication implémentation de Basis                             |
+| M. Lecompa.  | X                    | Benchmark et profilage | Structure fond et forme                      |
  
 ---
 
@@ -374,6 +377,10 @@ Racine
 
 ---
 
+# II.4. - Makefile
+
+---
+
 # III. Implémentation des classes principales
 
 .large[
@@ -405,6 +412,124 @@ Racine
 | Calcul des `$L^{j}_{k}$` pour `$j < m$, $k < n$` | `void calcLaguerre(int m, int n, const arma::vec& vect)`    |
 | `$L^m_n$` évalué en `vect`                       | `arma::vec laguerre(int m, int n)`                          |
 ]
+
+---
+
+# III.1. - Polynômes : Mandatory test
+
+```cpp
+void testMandatory0(void)
+    {
+        Poly poly;
+        arma::vec zVals, calcVals, targetVals;
+        zVals = {-3.1, -2.3, -1.0, -0.3, 0.1, 4.3, 9.2, 13.7};
+        poly.calcHermite(6, zVals); // compute Hermite polynomials for n in {0 ... 5}
+        calcVals   = poly.hermite(4); // n = 4
+        targetVals = {  1.02835360e+03,  2.05825600e+02, -2.00000000e+01,  7.80960000e+00,
+                        1.15216000e+01,  4.59456160e+03,  1.10572154e+05,  5.54643458e+05};
+        TS_ASSERT_DELTA(arma::norm(calcVals / targetVals - 1.0), 0.0, 1e-08);
+        calcVals   = poly.hermite(5); // n = 5
+        targetVals = { -4.76676832e+03, -3.88909760e+02,  8.00000000e+00, -3.17577600e+01,
+                        1.18403200e+01,  3.48375818e+04,  1.98557479e+06,  1.50339793e+07};
+        TS_ASSERT_DELTA(arma::norm(calcVals / targetVals - 1.0), 0.0, 1e-08);
+        zVals = {0.1, 0.3, 1.2, 1.8, 2.0, 2.5, 7.1, 11.1};
+        poly.calcLaguerre(6, 4, zVals); // compute generalized Laguerre polynomials for m in {0 ... 5} and n in {0 ... 3}
+        calcVals   = poly.laguerre(4, 2); // m = 4, n = 2
+        targetVals = {  14.405,  13.245,  8.52 ,  5.82 ,  5.,  3.125,  -2.395,  10.005};
+        TS_ASSERT_DELTA(arma::norm(calcVals / targetVals - 1.0), 0.0, 1e-08);
+        calcVals   = poly.laguerre(5, 3); // m = 5, n = 3
+        targetVals = { 53.23983333,  47.95550000,  27.87200000,  17.5880,
+                    14.66666667,   8.39583333,  -0.81183333,  10.1015};
+        TS_ASSERT_DELTA(arma::norm(calcVals / targetVals - 1.0), 0.0, 1e-08);
+    }
+```
+
+---
+
+# III.1. - Polynômes : test Hermite
+
+```cpp
+   void testHermite(){
+
+      arma::vec evaluatingPoints = {-1.3737, 0.4167, -3.2845, 2.4175, 1.1056};
+
+      Poly poly;
+      poly.calcHermite(6, evaluatingPoints);
+
+      // H0
+      arma::vec result_h0 = {1.0, 1.0, 1.0, 1.0, 1.0};
+      arma::vec computed_h0 = poly.hermite(0);
+      TS_ASSERT_DELTA(arma::norm(result_h0 - computed_h0), 0.0, 1e-08);
+
+      // H1
+      arma::vec result_h1 = {-2.7474, 0.8334, -6.569, 4.835, 2.2112};
+      arma::vec computed_h1 = poly.hermite(1);
+      TS_ASSERT_DELTA(arma::norm(result_h1 - computed_h1), 0.0, 1e-08);
+
+      // H2
+      arma::vec result_h2 = {5.548206759999999, -1.30544444, 41.151761, 21.377225, 2.889405439999999};
+      arma::vec computed_h2 = poly.hermite(2);
+      TS_ASSERT_DELTA(arma::norm(result_h2 - computed_h2), 0.0, 1e-08);
+
+      // H3
+      arma::vec result_h3 = {-4.253543252423999, -4.421557396296, -244.049918009, 84.01888287499999, -2.455746691072002};
+      arma::vec computed_h3 = poly.hermite(3);
+      TS_ASSERT_DELTA(arma::norm(result_h3 - computed_h3), 0.0, 1e-08);
+
+      // H4
+      arma::vec result_h4 = {-21.6030558282903, 4.147740705926914, 1356.2533454011211, 277.96794870062496, -22.766579723298406};
+      arma::vec computed_h4 = poly.hermite(4);
+      TS_ASSERT_DELTA(arma::norm(result_h4 - computed_h4), 0.0, 1e-08);
+
+      // H5
+      arma::vec result_h5 = {93.38058160203676, 38.829186274687494, -6956.828881867965, 671.8239689675219, -30.695487555581416};
+      arma::vec computed_h5 = poly.hermite(5);
+      TS_ASSERT_DELTA(arma::norm(result_h5 - computed_h5), 0.0, 1e-08);
+   }
+```
+
+---
+
+# III.1. - Polynômes : test Laguerre
+
+```cpp
+ void testLaguerre(){
+
+      // Troncature de la base : m varie de 0 à 5 (mMax = 6) et n < nMax[m]
+      const int mMax = 6;
+      const int nMaxGlobal = (mMax - 1) / 2 + 1; // nMax[0], le plus grand des nMax[m]
+
+      arma::vec evaluatingPoints = {-1.3737, 0.4167, -3.2845, 2.4175, 1.1056};
+
+      Poly poly;
+      poly.calcLaguerre(mMax, nMaxGlobal, evaluatingPoints);
+
+      // m = 0, n = 0
+      arma::vec result_l_m0_n0 = {1.0, 1.0, 1.0, 1.0, 1.0};
+      arma::vec computed_l_m0_n0 = poly.laguerre(0, 0);
+      TS_ASSERT_DELTA(arma::norm(result_l_m0_n0 - computed_l_m0_n0), 0.0, 1e-08);
+
+      // m = 0, n = 1
+      arma::vec result_l_m0_n1 = {2.3737, 0.5832999999999999, 4.2844999999999995, -1.4175, -0.10559999999999992};
+      arma::vec computed_l_m0_n1 = poly.laguerre(0, 1);
+      TS_ASSERT_DELTA(arma::norm(result_l_m0_n1 - computed_l_m0_n1), 0.0, 1e-08);
+
+      // m = 0, n = 2
+      arma::vec result_l_m0_n2 = {4.690925845, 0.25341944499999997, 12.962970125, -0.9128468750000001, -0.6000243199999999};
+      arma::vec computed_l_m0_n2 = poly.laguerre(0, 2);
+      TS_ASSERT_DELTA(arma::norm(result_l_m0_n2 - computed_l_m0_n2), 0.0, 1e-08);
+
+      // m = 1, n = 0 ...
+      // m = 1, n = 1 ...
+      // m = 1, n = 2 ...
+      // m = 2, n = 0 ...
+      // m = 2, n = 1 ...
+      // m = 3, n = 0 ...
+      // m = 3, n = 1 ...
+      // m = 4, n = 0 ...
+      // m = 5, n = 0 ...
+   }
+```
 
 ---
 
@@ -440,10 +565,276 @@ Racine
 | Fonction                                | Interface                                       |
 |:----------------------------------------|:------------------------------------------------|
 | `$m^\textrm{max}$`                      | `int m_max(int N, double Q)`                    |
-| `nMax[m]`                               | `double n_max(int m_max, int m)`                |
-| `n_zMax[m, n]`                          | `double nz_max(int m, int n, int N, double Q)`     |
+| `$nMax[m]$`                               | `double n_max(int m_max, int m)`                |
+| `$n_zMax[m, n]$`                          | `double nz_max(int m, int n, int N, double Q)`     |
 | Résultats stockés dans `Basis`          | `int mMax`, `arma::ivec nMax`, `arma::imat n_zMax` |
 ]
+
+
+---
+
+# III.1. - Base : Mandatory test
+
+```cpp
+void testMandatory1(void)
+    {
+        // Mandatory test #01 - Basis truncation
+
+        //     br = 1.935801664793151, bz = 2.829683956491218, N = 14, Q = 1.3
+        Basis basis(1.935801664793151,      2.829683956491218,     14,     1.3);
+        TS_ASSERT_EQUALS(basis.mMax, 14);
+        arma::ivec nMax = {7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1};
+        TS_ASSERT((basis.nMax - nMax).is_zero());
+        arma::imat n_zMax = {{18, 15, 13, 10, 7, 5, 2}, 
+                            {16, 14, 11,  9, 6, 3, 1}, 
+                            {15, 13, 10,  7, 5, 2, 0}, 
+                            {14, 11,  9,  6, 3, 1, 0}, 
+                            {13, 10,  7,  5, 2, 0, 0}, 
+                            {11,  9,  6,  3, 1, 0, 0}, 
+                            {10,  7,  5,  2, 0, 0, 0}, 
+                            { 9,  6,  3,  1, 0, 0, 0}, 
+                            { 7,  5,  2,  0, 0, 0, 0}, 
+                            { 6,  3,  1,  0, 0, 0, 0}, 
+                            { 5,  2,  0,  0, 0, 0, 0}, 
+                            { 3,  1,  0,  0, 0, 0, 0}, 
+                            { 2,  0,  0,  0, 0, 0, 0}, 
+                            { 1,  0,  0,  0, 0, 0, 0}};
+        // check if matrices are equal
+        TS_ASSERT((basis.n_zMax - n_zMax).is_zero());
+    }
+```
+
+---
+
+# III.1. - Base : Mandatory test
+
+```cpp
+void testMandatory2(void)
+    {
+        // Mandatory test #02 - Basis r-functions
+
+        //     br = 1.935801664793151, bz = 2.829683956491218, N = 14, Q = 1.3
+        Basis basis(1.935801664793151,      2.829683956491218,     14,     1.3);
+        arma::vec r = {3.1, 2.3, 1.0, 0.0, 0.1, 4.3, 9.2, 13.7};
+        arma::vec res00 = { 8.08521235111303e-02,
+                            1.43887615825118e-01,
+                            2.55045100912706e-01,
+                            2.91450097294984e-01,
+                            2.91061479407116e-01,
+                            2.47240792330589e-02,
+                            3.63004153921473e-06,
+                            3.87659726026123e-12};
+        TS_ASSERT_DELTA(arma::norm(basis.rPart(r, 0, 0) - res00), 0.0, 1e-15);
+        arma::vec res82 = { 5.87858442372438e-02,
+                            1.35240488413384e-02,
+                            4.06810074575519e-05,
+                            0.00000000000000e+00,
+                            4.92817669085478e-13,
+                            8.52011998934850e-02,
+                            5.20525909328609e-02,
+                            1.44615166152252e-05};
+        TS_ASSERT_DELTA(arma::norm(basis.rPart(r, 8, 2) - res82), 0.0, 1e-15);
+
+
+    }
+```
+
+---
+
+# III.1. - Base : Mandatory test
+
+```cpp
+void testMandatory3(void)
+    {
+        // Mandatory test #03 - Basis z-functions
+
+        //     br = 1.935801664793151, bz = 2.829683956491218, N = 14, Q = 1.3
+        Basis basis(1.935801664793151,      2.829683956491218,     14,     1.3);
+        arma::vec z = {-10.1, -8.4, -1.0, 0.0, 0.1, 4.3, 9.2, 13.7};
+        arma::vec res00 = { 7.64546544834383e-04,
+                            5.44886272162148e-03,
+                            4.19492564268520e-01,
+                            4.46522724110539e-01,
+                            4.46243982300708e-01,
+                            1.40736821086932e-01,
+                            2.26186220733178e-03,
+                            3.62929640195959e-06};
+        TS_ASSERT_DELTA(arma::norm(basis.zPart(z, 0) - res00), 0.0, 1e-15);
+        arma::vec res15 = {-9.48674551049192e-02,
+                        -1.40338701953237e-03,
+                            1.85620628040096e-01,
+                        -0.00000000000000e+00,
+                        -3.93028470685214e-02,
+                        -1.79526868763440e-01,
+                            2.15604096600475e-01,
+                            2.44977220882127e-01};
+        TS_ASSERT_DELTA(arma::norm(basis.zPart(z, 15) - res15), 0.0, 1e-15);
+    }
+```
+
+---
+
+# III.1. - Base : tests
+
+```cpp
+void test_rPart_en_etat_fondamental_a_l_origine(){
+      Basis basis(2,0,0,0);
+      arma::vec r = arma::zeros<arma::vec>(8);
+      arma::vec res = arma::ones<arma::vec>(8);
+      res = 0.2821 * res;
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 0 ,0 ) - res ),0.0,  1e-15) ;
+   }
+```
+
+```cpp
+void test_rPart_en_etat_fondamental_partout(){
+      Basis basis(2,0,0,0);
+      arma::vec r = {3.1, 2.3, 1.0, 0.0, 0.1, 4.3, 9.2, 13.7};
+      arma::vec res = {8.4859e-02, 1.4562e-01, 2.4895e-01, 2.8209e-01, 2.8174e-01, 2.7966e-02, 7.1707e-06, 1.8252e-11};
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 0 ,0 ) - res ),0.0,  1e-15) ;
+   }
+```
+
+```cpp
+void test_rPart_en_partout_pour_n_et_m_different_de_0(){
+      Basis basis(2,0,0,0);
+      arma::vec r = {9.1, 6.3, 1.0, 4.0, 0.1, 0.3, 9.2, 13.7};
+      arma::vec res = {-0.0683 0.0097, 0.1276, 0.0738, 0.0023, 0.0196, -0.0684, -0.0001};
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 2 ,5 ) - res ),0.0,  1e-15) ;
+   }
+```
+
+```cpp
+void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_br(){
+      Basis basis(2,0,0,0);
+      TS_ASSERT_EQUALS(basis.br , 2);
+}
+```
+
+```cpp
+void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_bz(){
+      Basis basis(2,5,0,0);
+      TS_ASSERT_EQUALS(basis.bz , 5);
+}
+```
+
+```cpp
+void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_N(){
+      Basis basis(2,5,3,0);
+      TS_ASSERT_EQUALS(basis.N , 3);
+}
+```
+
+---
+
+# III.1. - Base : tests
+
+```cpp
+void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_N(){
+      Basis basis(2,5,3,0);
+      TS_ASSERT_EQUALS(basis.N , 3);
+}
+```
+
+```cpp
+void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_Q(){
+      Basis basis(2,5,3,4);
+      TS_ASSERT_EQUALS(basis.Q , 4);
+}
+```
+
+```cpp
+void test_zPart_en_etat_fondamental_a_l_origine(){
+      Basis basis(0,2.5,0,0);
+      arma::vec z = arma::zeros<arma::vec>(8);
+      arma::vec res = arma::ones<arma::vec>(8);
+      res = 0.4751 * res;
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 0 ) - res ), 0.0,  1e-15) ;
+}
+```
+
+```cpp
+void test_zPart_en_etat_fondamental_partout(){
+      Basis basis(2,2.5 ,0,0);
+      arma::vec z = {-4.5, -2.1, 0.0, 1.5, 3.8, 10.2, 2 ,1};
+      arma::vec res = { 0.0940, 0.3338, 0.4751, 0.3968, 0.1496, 0.0001, 0.3450, 0.4385};
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 0 ) - res ),0.0,  1e-15) ;
+   }
+```
+
+```cpp
+void test_zPart_en_partout_pour_nz_different_de_0(){
+      Basis basis(2,2.5,0,0);
+      arma::vec z = {-4.5, -2.1, 0.0, 1.5, 3.8, 10.2, 2 ,1};
+      arma::vec res = {0.1706, -0.1042, 0, 0.2557, -0.2894, 0.0480, 0.1368, 0.2695};
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 5 ) - res ),0.0,  1e-15) ;
+   }
+```
+
+---
+
+# III.1. - Base : tests
+
+```cpp
+void test_sur_la_valeur_calculee_de_mMax(){
+      Basis basis(1 , 1,  12 , 1.2) ; 
+      int mMax_res = 12;
+      TS_ASSERT_EQUALS(basis.mMax , mMax_res) ;
+}
+```
+
+```cpp
+void test_sur_le_vecteur_nMax_calculee(){
+      Basis basis(1 , 1,  11 , 1.2) ;
+      arma::ivec nMax_res = {6 ,5 ,5 ,4, 4, 3, 3, 2, 2, 1, 1};
+      TS_ASSERT((basis.nMax - nMax_res).iszero());      
+   }
+```
+
+```cpp
+void test_sur_le_matrice_n_zMax_calculee(){
+      Basis basis(1 , 1,  10 , 1.2);
+      arma::imat n_zMax_res = {
+        {12, 10, 8,  5,  3},
+        {11, 9,  6,  4,  2},
+        {10, 8,  5,  3,  0},
+        {9,  6,  4,  2,  0},
+        {8,  5,  3,  0,  0},
+        {6,  4,  2,  0,  0},
+        {5,  3,  0,  0,  0},
+        {4,  2,  0,  0,  0},
+        {3,  0,  0,  0,  0},
+        {2,  0,  0,  0,  0}
+      };
+      TS_ASSERT((basis.n_zMax - n_zMax_res).iszero());      
+   }
+```
+
+---
+
+# III.1. - Base : tests
+
+```cpp
+void test_basisfunc() {
+      Basis basis(2 , 2.5,  0 , 0) ;
+      arma::vec r = {9.1, 6.3, 1.0, 4.0, 0.1, 0.3};
+      arma::vec z = {-4.5, -2.1, 0.0, 1.5, 3.8 };
+      arma::vec res_r = {0.0037, 0.0807, 0.1639, -0.0441, 0.0243, 0.0708};
+      arma::vec res_z = {-0.3400, 0.2572, 0.0, -0.3134, 0.2128};
+
+      arma::mat res_basis = {
+         {-0.0012, -0.0274, -0.0557, 0.0150, -0.0083, -0.0241},
+         {0.0009, 0.0208, 0.0422, -0.0113, 0.0063, 0.0182},
+         {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000},
+         {-0.0012, -0.0253, -0.0514, 0.0138, -0.0076, -0.0222},
+         {0.0008, 0.0172, 0.0349, -0.0094, 0.0052, 0.0151}
+      };
+
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 1 ,2 ) - res_r ),0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 3 ) - res_z ),0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.basisFunc(1 , 2 , 3 , z , r ) - res_basis ),0.0,  1e-15) ;
+   }
+```
 
 ---
 
@@ -725,6 +1116,76 @@ Même méthode d'évaluation que pour Hermite. $L_i^m$ donne une relation de ré
 `$n\_$` **blocs** de `$m\_$` colonnes : `$i$` (degré) change de bloc, `$j$` varie à l'intérieur d'un bloc.
 ]
 
+---
+
+# III.3. - Implémentation de la troncature
+
+---
+
+# III.4. - Implémentation de la base
+
+---
+
+class: middle
+# IV. - Implémentation de la densité
+
+.large[
+1. Méthode naïve
+2. optimisation
+]
+
+---
+
+# IV.1. - Méthode naïve
+
+---
+
+# IV.2. - Optimisation
+
+---
+
+class: middle
+# V. - Résultats
+
+.large[
+1. Wrapper python
+2. Résultats et benchmarks
+3. Outils de profilage
+]
+
+---
+
+# V.1. - Wrapper python
+
+---
+
+# V.2. - Résultats et benchmarks
+
+---
+
+# V.3. - Outils de profilage
+
+---
+
+# Merci de nous avoir écouté
+
+.hcenter[
+## Avez-vous des questions ?
+]
+
+<br>
+
+.hcenter[
+J.M. Assogba - M. Glessmer - M. Lecompagnon
+]
+
+<br>
+
+------------------------------------
+
+<br>
+
+.hcenter.shadow.w50[![](images/density.png)]
 
     </textarea>
 
