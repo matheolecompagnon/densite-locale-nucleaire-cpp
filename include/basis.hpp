@@ -13,7 +13,6 @@
 
 #include <armadillo>
 #include "poly.hpp"
-#include <complex>
 
 class Basis {
     public:

@@ -3,7 +3,7 @@ CXXTESTGEN := cxxtestgen
 
 OPTIONS_COMMON  := -Wall -Wextra -Werror -Iinclude
 OPTIONS_DEBUG   := $(OPTIONS_COMMON) -g -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer
-OPTIONS_RELEASE := $(OPTIONS_COMMON) -O0
+OPTIONS_RELEASE := $(OPTIONS_COMMON) -O2
 DEPFLAGS        := -MMD -MP
 LDLIBS          := -larmadillo
 
