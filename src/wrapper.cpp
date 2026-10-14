@@ -24,6 +24,9 @@
 #include <vector>
 
 #include "basis.hpp"
+#include "trucation.cpp"
+
+
 
 /* ======================================================================
  *  1. Code C++ « pur » : aucune dépendance à Python
@@ -56,6 +59,8 @@ static std::vector<double> phi(int m, int n, int nz, double br, double bz,
         out[i] = Z(i) * R(i);             // produit terme à terme : phi(r_i, z_i)
     return out;
 }
+
+
 
 /* ======================================================================
  *  2. Le wrapper (couche de traduction Python <-> C++)
