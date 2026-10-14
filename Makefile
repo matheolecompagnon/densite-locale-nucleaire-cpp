@@ -3,14 +3,14 @@ CXXTESTGEN := cxxtestgen
 
 OPTIONS_COMMON  := -Wall -Wextra -Werror -Iinclude
 OPTIONS_DEBUG   := $(OPTIONS_COMMON) -g -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer
-OPTIONS_RELEASE := $(OPTIONS_COMMON) -O2
+OPTIONS_RELEASE := $(OPTIONS_COMMON) -O0
 DEPFLAGS        := -MMD -MP
 LDLIBS          := -larmadillo
 
 # Options par défaut (surchargées par les cibles debug, release et test)
 OPTIONS := $(OPTIONS_DEBUG)
 
-files   := basis poly simulation
+files   := basis poly simulation bench
 objects := $(files:%=bin/%.o)
 
 main_exec    := exec
@@ -19,7 +19,7 @@ test_cpp     := bin/tests.cpp
 test_obj     := bin/tests.o
 test_exec    := bin/test
 
-.PHONY: all debug release run test clean
+.PHONY: all debug release run test bench clean
 
 all: debug
 
@@ -28,6 +28,11 @@ debug: run
 
 release: OPTIONS := $(OPTIONS_RELEASE)
 release: run
+
+# ---------- Benchmark ----------
+
+bench: OPTIONS := $(OPTIONS_RELEASE) -DBENCH
+bench: run
 
 # ---------- Programme principal ----------
 run: $(main_exec)

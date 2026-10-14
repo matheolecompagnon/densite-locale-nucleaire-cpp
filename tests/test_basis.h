@@ -103,7 +103,7 @@
       Basis basis(2,0,0,0);
       arma::vec r = {9.1, 6.3, 1.0, 4.0, 0.1, 0.3, 9.2, 13.7};
 
-      arma::vec res = {-0.0683
+      arma::vec res = {-0.0683,
                      0.0097,
                      0.1276,
                      0.0738,
@@ -193,7 +193,7 @@
       Basis basis(2,2.5 ,0,0);
       arma::vec z = {-4.5, -2.1, 0.0, 1.5, 3.8, 10.2, 2 ,1};
 
-      arma::vec res = { 0.0940
+      arma::vec res = { 0.0940,
                      0.3338,
                      0.4751,
                      0.3968,
@@ -216,7 +216,7 @@
       Basis basis(2,2.5,0,0);
       arma::vec z = {-4.5, -2.1, 0.0, 1.5, 3.8, 10.2, 2 ,1};
 
-      arma::vec res = {0.1706
+      arma::vec res = {0.1706,
                      -0.1042,
                      0,
                      0.2557,
@@ -255,7 +255,7 @@
       Basis basis(1 , 1,  11 , 1.2) ;
       arma::ivec nMax_res = {6 ,5 ,5 ,4, 4, 3, 3, 2, 2, 1, 1};
 
-      TS_ASSERT((basis.nMax - nMax_res).iszero());      
+      TS_ASSERT((basis.nMax - nMax_res).is_zero());      
    }
 
    /**
@@ -278,7 +278,7 @@
         { 2      ,   0     ,    0 ,        0   ,      0}
       };
 
-      TS_ASSERT((basis.n_zMax - n_zMax_res).iszero());      
+      TS_ASSERT((basis.n_zMax - n_zMax_res).is_zero());      
    }
 
    /**
