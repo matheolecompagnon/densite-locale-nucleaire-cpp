@@ -24,7 +24,7 @@ Modélisation de la densité nucléaire
 ]
 
 .subtitle[
-J.M. Assogba - M. Glessmer - M. Lecompagnon - ENSIIE - 2026
+J-M. Assogba - M. Glessmer - M. Lecompagnon - ENSIIE - 2026
 ]
 
 .row[
@@ -317,7 +317,7 @@ class: top
 |      Nom     |  Lancement                                              | Interfaces  | Tests     | Implémentation |
 |:-------------|:--------------------------------------------------------|:------------|:----------|:---------------|
 | M. Glessmer  | Gitlab, Makefile                                           | Truncation  | Poly      | Truncation  |
-| J.M. Assogba | Tests Armadillo                                            | Poly        | Basis     | Basis       |
+| J-M. Assogba | Tests Armadillo                                            | Poly        | Basis     | Basis       |
 | M. Lecompa.  | Arborescence, <br>Documentation,<br> Création des fichiers | Basis       | Makefile, Mandatory | Poly        |
 
 |        Nom      | Algorithme et wrapper   | Resultats |Présentation                                 |
@@ -1186,6 +1186,259 @@ J.M. Assogba - M. Glessmer - M. Lecompagnon
 <br>
 
 .hcenter.shadow.w50[![](images/density.png)]
+
+---
+
+# III.3 Implémentation de la troncature
+
+.block[
+### Définition des paramètres
+Soit `$N \in \mathbb{N}^+$` et `$Q \in \mathbb{R}^+$` les paramètres de troncature. On pose :
+
+`$$\nu(i) \equiv (N + 2)Q^{\frac{2}{3}} + \frac{1}{2} - iQ$$`
+
+`$$m^{\text{max}} \equiv \sup \{ i : \nu(i) \ge 1 \}$$`
+]
+
+Les nombres quantiques sont alors bornés par :
+
+- `$0 \le m < m^{\text{max}}$`
+- `$0 \le n < \frac{1}{2}(m^{\text{max}} - m - 1) + 1$`
+- `$0 \le n_z < \nu(m + 2n + 1)$`
+
+---
+
+# III.3 Implémentation de la troncature (suite)
+
+.block[
+### Traduction algorithmique en C++
+Le calcul de `$m^{\text{max}}$` nécessite de traduire le supremum par une boucle, tandis que les autres bornes s'évaluent par application directe des formules.
+]
+
+```cpp
+// nu(0) = (N+2) Q^(2/3) + 1/2, puis on décrémente de Q à chaque pas
+int m_max(int N, double Q){
+    int m_max = 0;
+    double q_pow = pow(q, 2.0/3.0);
+    double nu = ((double)(N + 2))*(q_pow) + 1.0/2.0
+    while(nu < 1) {
+        m_max++;
+        nu - Q;
+    }
+    return m_max;
+}
+
+double n_max(int m_max, int m) {return 1.0/2.0*(double)(m_max - m + 1)}
+
+// Borne pour n_z : evaluation directe de nu(m + 2n + 1)
+double nz_max(int m, int n, int N, double Q) {
+    int i = m +2*n + 1;
+    double q_pow = pow(Q,2.0/3.0);
+    return q_pow - ((double)i) * Q;
+}
+```
+
+---
+
+# IV.1 Structure de la classe Basis (`basis.hpp`)
+
+.block[
+### Rôle de la classe
+La classe `Basis` génère les fonctions d'onde spatiales en coordonnées cylindriques sur une grille `$z \times r$`.
+]
+
+- **Paramètres de déformation et de troncature** :
+  - `$b_r$`, `$b_z$` : paramètres d'échelle selon `$r$` et `$z$`.
+  - `$N$`, `$Q$` : paramètres régissant la taille de la base.
+
+- **Bornes précalculées** :
+  - `int mMax` : borne pour le nombre quantique `$m$`.
+  - `arma::ivec nMax` : borne pour `$n$`, pour chaque `$m$`.
+  - `arma::imat n_zMax` : borne pour `$n_z$`, pour chaque `$(m, n)$`.
+
+---
+
+# IV.2 Constructeur (`basis.cpp`)
+
+.block[
+### Initialisation des bornes quantiques
+`mMax` est calculé en premier, puis `nMax(m)`, puis `n_zMax(m, n)`. Chaque niveau dépend du précédent.
+]
+
+```cpp
+Basis::Basis(double _br, double _bz, int _N, double _Q) : br(_br), bz(_bz), N(_N), Q(_Q) {
+    /**
+     * @brief Calculer mmax, nMax et n_zMax en fonction de N et Q (Troncation)
+     * 
+     */
+    //Appel à la fonctions de troncature pour calculer mMax
+    mMax = m_max( _N, _Q);
+
+
+        //Une fois mMax calculé, on peut calculer nMax et n_zMax
+        //On initialise nMax avec de taille mMax et n_zMax a une matrice de taille mMax
+    nMax.zeros(mMax) ;
+
+        //Calculer nMax pour chaque m
+    for(int m = 0; m < mMax ; ++m) {
+        nMax(m) = n_max(mMax , m);
+    }
+
+        //initialiser n_zMax avec une matrice de taille mMax x nMax.max()
+        n_zMax.zeros(mMax, nMax.max());
+
+        //Calculer n_zMax pour chaque combinaison de m et n
+    for(int m = 0; m < mMax ; ++m) {
+        for(int n = 0; n < nMax(m) ; ++n) {
+            n_zMax(m, n) = nz_max(m, n, _N, _Q);
+        }
+    }
+
+}
+```
+
+---
+
+# IV.3 Fonction factorielle
+
+.block[
+### Factorielle en `double`
+Le facteur radial contient `$\sqrt{n! / (n+|m|)!}$`. Le calcul en `double` évite la division entière et le débordement des `int`.
+]
+
+```cpp
+static double factoriel(int n) {
+    /**
+     * @brief Fonction pour calculer la factorielle d'un entier n
+     * 
+     */
+    double f = 1.0;
+    for (int k = 2; k <= n; ++k) f *= k;
+    return f;
+}
+```
+
+.alert.animated.fadeInUp[
+Le mot-clé `static` limite la fonction à `basis.cpp`.
+]
+
+---
+
+# IV.4 Partie radiale (`rPart`)
+
+.block[
+### Composante radiale
+`$$R_{m,n}(r) = \frac{1}{b_r\sqrt{\pi}} \sqrt{\frac{n!}{(n+|m|)!}} \left(\frac{r}{b_r}\right)^{|m|} e^{-\frac{r^2}{2b_r^2}} L_n^{|m|}\!\left(\frac{r^2}{b_r^2}\right)$$`
+]
+
+```cpp
+arma::vec Basis::rPart(arma::vec r, int m, int n) {
+    /**
+     * @brief Implémentation de la fonction de base pour la partie radiale
+     * 
+     */
+    int abs_m = std::abs(m);
+
+        //Calculer le facteur de normalisation
+    double facteur = (1.0 / (br * std::sqrt(M_PI))) * std::sqrt(factoriel(n) / factoriel(n + abs_m));
+
+        //Calculer les puissances et l'exponentielle
+    arma::vec puissance = arma::square(r) / (br * br);
+
+        //Calculer l'exponentielle
+    arma::vec exponentielle = arma::exp(-puissance / 2.0);
+
+    arma::vec fact_vec = arma::pow(r / br, abs_m);
+
+        //Calculer les polynômes de Laguerre
+    Poly::calcLaguerre(abs_m + 1, n + 1, puissance);
+    arma::vec laguerre = Poly::laguerre(abs_m, n);
+
+        //Combiner tous les éléments pour obtenir la fonction de base radiale
+    return facteur * fact_vec % laguerre % exponentielle;
+}
+```
+
+---
+
+# IV.4 (suite) Partie radiale : points clés
+
+.block[
+### Lecture du code
+- `puissance` vaut `$r^2 / b_r^2$` : c'est l'argument de Laguerre, réutilisé dans l'exponentielle.
+- `calcLaguerre(abs_m + 1, n + 1, puissance)` évalue avec le polynôme de Laguerre en les points soumis en paramètres
+- `Poly::laguerre(abs_m, n)` récupère récupère la portion voulue de la matrice évaluée.
+]
+
+.alert.animated.fadeInUp[
+`%` est le produit de Schur (terme à terme) d'Armadillo.
+]
+
+---
+
+# IV.5 Partie axiale (`zPart`)
+
+.block[
+### Composante selon `$z$`
+`$$Z_{n_z}(z) = \frac{1}{\sqrt{b_z\, 2^{n_z}\, n_z!\, \sqrt{\pi}}} \, H_{n_z}\!\left(\frac{z}{b_z}\right) e^{-\frac{z^2}{2b_z^2}}$$`
+]
+
+```cpp
+arma::vec Basis::zPart(arma::vec z, int n_z) {
+    /**
+     * @brief Implémentation de la fonction de base pour la partie z
+     * 
+     */
+    //Calculer le facteur de normalisation
+    double facteur = 1.0 / (std::sqrt(bz) * sqrt(std::pow(2.0, n_z) * factoriel(n_z) * std::sqrt(M_PI)));
+
+        //Calculer les puissances et l'exponentielle
+    arma::vec puissance = arma::square(z) / (bz * bz);
+
+        //Calculer l'exponentielle
+    arma::vec exponentielle = arma::exp(-puissance / 2.0);
+
+        //Calculer les polynômes d'Hermite
+    Poly::calcHermite(n_z + 1, z / bz);
+    arma::vec hermite = Poly::hermite(n_z);
+
+        //Combiner tous les éléments pour obtenir la fonction de base z
+    return facteur * hermite % exponentielle;
+}
+```
+
+.alert.animated.fadeInUp[
+Hermite s'évalue en `$z / b_z$`, tandis que l'exponentielle utilise `$z^2 / b_z^2$`.
+]
+
+---
+
+# IV.6 Produit tensoriel (`basisFunc`)
+
+
+.block[
+### Construction 2D
+La fonction de base se calcule en deux morceaux indépendants : une partie en `$z$` et une partie en `$r$`. On les multiplie pour obtenir la valeur en chaque point de la grille.
+]
+
+```cpp
+arma::mat Basis::basisFunc(int m , int n , int n_z , arma::vec z, arma::vec r) {
+        //Calcul de r_part et z_part 
+    arma::vec r_part = rPart(r, m, n);
+    arma::vec z_part = zPart(z, n_z);
+
+        // Produit tensoriel pour obtenir la matrice finale
+    return z_part * r_part.t(); 
+}
+```
+
+.alert.animated.fadeInUp[
+`z_part` est un vecteur colonne et `r_part.t()` un vecteur ligne : le résultat a `z` en lignes et `r` en colonnes.
+]
+
+---
+
+
 
     </textarea>
 

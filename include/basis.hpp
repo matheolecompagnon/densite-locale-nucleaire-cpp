@@ -15,6 +15,7 @@
 #include <armadillo>
 #include "poly.hpp"
 #include <complex>
+#include "truncation.hpp"
 
 class Basis {
     public:
@@ -57,10 +58,10 @@ class Basis {
          * @brief Basis function for the Z axis part
          * 
          * @param z Z axis coordinate
-         * @param n quantum number
+         * @param n_z quantum number
          * @return arma::vec 
          */
-        arma::vec zPart(arma::vec z, int n);
+        arma::vec zPart(arma::vec z, int n_z);
         
 
         /**

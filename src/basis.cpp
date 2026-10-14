@@ -16,15 +16,39 @@ Basis::Basis(double _br, double _bz, int _N, double _Q) : br(_br), bz(_bz), N(_N
      * @brief Calculer mmax, nMax et n_zMax en fonction de N et Q (Troncation)
      * 
      */
+    //Appel à la fonctions de troncature pour calculer mMax
+    mMax = m_max( _N, _Q);
+
+
+    //Une fois mMax calculé, on peut calculer nMax et n_zMax
+    //On initialise nMax avec de taille mMax et n_zMax a une matrice de taille mMax
+    nMax.zeros(mMax) ;
+
+    //Calculer nMax pour chaque m
+    for(int m = 0; m < mMax ; ++m) {
+        nMax(m) = n_max(mMax , m);
+    }
+
+    //initialiser n_zMax avec une matrice de taille mMax x nMax.max()
+    n_zMax.zeros(mMax, nMax.max());
+
+    //Calculer n_zMax pour chaque combinaison de m et n
+    for(int m = 0; m < mMax ; ++m) {
+        for(int n = 0; n < nMax(m) ; ++n) {
+            n_zMax(m, n) = nz_max(m, n, _N, _Q);
+        }
+    }
+
 }
 
-int factoriel(int n) {
+static double factoriel(int n) {
     /**
      * @brief Fonction pour calculer la factorielle d'un entier n
      * 
      */
-    if (n <= 1) return 1;
-    return n * factoriel(n - 1);
+    double f = 1.0;
+    for (int k = 2; k <= n; ++k) f *= k;
+    return f;
 }
 
 /**
@@ -89,8 +113,8 @@ arma::vec Basis::zPart(arma::vec z, int n_z) {
     arma::vec exponentielle = arma::exp(-puissance / 2.0);
 
     //Calculer les polynômes d'Hermite
-    poly.calcHermite(n_z + 1, puissance);
-    arma::vec hermite = poly.hermite(n_z);
+    Poly::calcHermite(n_z + 1, z / bz);
+    arma::vec hermite = Poly::hermite(n_z);
 
     //Combiner tous les éléments pour obtenir la fonction de base z
     return facteur * hermite % exponentielle;
