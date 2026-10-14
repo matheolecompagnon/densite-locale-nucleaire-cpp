@@ -697,11 +697,5 @@ for (int m = 0; m < basis.mMax; m++) {
     // 4. Redimensionner le vecteur diagonale en grille 2D et accumuler
     result += arma::reshape(diag_R_m, nbR, nbZ);
 }
-   
-
-
-
-
-
     return result;
 }
