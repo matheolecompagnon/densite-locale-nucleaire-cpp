@@ -49,13 +49,14 @@ Basis::Basis(double _br, double _bz, int _N, double _Q) : br(_br), bz(_bz), N(_N
     }
 }
 
-int factoriel(int n) {
+static double factoriel(int n) {
     /**
      * @brief Fonction pour calculer la factorielle d'un entier n
      * 
      */
-    if (n <= 1) return 1;
-    return n * factoriel(n - 1);
+    double f = 1.0;
+    for (int k = 2; k <= n; ++k) f *= k;
+    return f;
 }
 
 /**
@@ -122,7 +123,7 @@ arma::vec Basis::zPart(arma::vec z, int n_z) {
     arma::vec exponentielle = arma::exp(-puissance / 2.0);
 
     //Calculer les polynômes d'Hermite
-    poly.calcHermite(n_z + 1, base);
+    poly.calcHermite(n_z + 1, z / bz);
     arma::vec hermite = poly.hermite(n_z);
 
     //Combiner tous les éléments pour obtenir la fonction de base z
