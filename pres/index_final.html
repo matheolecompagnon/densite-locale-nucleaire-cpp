@@ -1351,83 +1351,190 @@ arma::mat Basis::basisFunc(int m , int n , int n_z , arma::vec z, arma::vec r) {
 .alert.animated.fadeInUp[
 `z_part` est un vecteur colonne et `r_part.t()` un vecteur ligne : le résultat a `z` en lignes et `r` en colonnes.
 ]
-
 ---
 
-class: middle
 # IV. - Implémentation de la densité
 
-.large[
+.hcenter.vcenter.large[
 1. Méthode naïve
-2. optimisation
+
+2. Optimisations et algorithmes
+
+3. Analyse des performances (accélération / ralentissements)
 ]
 
 ---
 
-# IV. - Implémentation de la densité
+# IV.1. - Méthode naïve : Algorithme
 
-## 1. Méthode naïve
+Rappel de la formule de la densité locale :
+`$$\rho(\mathbf{r}) = \sum_{m, n_a, n_{za}} \sum_{n_b, n_{zb}} \rho_{ab} \psi_{m, n_a, n_{za}}(\mathbf{r}) \psi^*_{m, n_b, n_{zb}}(\mathbf{r})$$`
 
----
-
-# IV. - Implémentation de la densité
-
-1. Méthode naïve
-## 2. optimisation
-
----
-
-class: middle
-# V. - Résultats
-
-.large[
-1. Wrapper python
-2. Résultats et benchmarks
-3. Outils de profilage
+.block[
+### Algorithme naïf (Boucles imbriquées)
+On parcourt l'ensemble des états quantiques `$a$` et `$b$`, et pour chaque état, on calcule les fonctions d'onde sur toute la grille spatiale `$(z, r_\perp)$`.
 ]
 
+```cpp
+int a = 0,b = 0;
+for (int m = 0; m < basis.mMax; m++)
+{
+for (int n = 0; n < basis.nMax(m); n++)
+{
+for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++)
+{
+    b = 0;
+    for (int mp = 0; mp < basis.mMax; mp++)
+    {
+    for (int np = 0; np < basis.nMax(mp); np++)
+    {
+    for (int n_zp = 0; n_zp < basis.n_zMax(mp, np); n_zp++)
+    {
+        arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
+        arma::mat funcB = basis.basisFunc(mp, np, n_zp, zVals, rVals);
+        if(m == mp) result += funcA % funcB * rho(a, b);
+        b++;
+    }
+    }
+    }
+    a++;
+}
+}
+}
+```
+
 ---
 
-# V. - Résultats
+# IV.2. - Première Optimisation : factorisation de Kronecker
 
-## 1. Wrapper python
+
+.
+```cpp
+int a,b, offset;
+for (int m = 0; m < basis.mMax; m++)
+{
+
+    offset = 0;
+    for (int m_prim = 0; m_prim < m; ++m_prim) {
+        int n_primMax = basis.nMax(m_prim);
+        for (int n_prim = 0; n_prim < n_primMax; ++n_prim) {
+            // On somme les n_zMax pour chaque n (et non une multiplication)
+            offset += basis.n_zMax(m_prim, n_prim); 
+        }
+    }
+    a = offset;
+
+    for (int n = 0; n < basis.nMax(m); n++)
+    {
+    for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++)
+    {
+        b = offset;
+        for (int np = 0; np < basis.nMax(m); np++)
+        {
+        for (int n_zp = 0; n_zp < basis.n_zMax(m, np); n_zp++)
+        {
+
+            arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
+            arma::mat funcB = basis.basisFunc(m, np, n_zp, zVals, rVals);
+
+            result += funcA % funcB * rho(a, b);
+            b++;
+                            
+        }
+        }
+        a++;
+    }
+    }
+}
+```
 
 ---
 
-# V. - Résultats
+# IV.3. - Deuxième Optimisation : Linearisation
 
-1. Wrapper python
-## 2. Résultats et benchmarks
+
+.
+```cpp
+
+//Création d'un tableau pour savoir à quel triplet quantique un numéro est associé
+std::vector<BasisState> states;
+for (int m = 0; m < basis.mMax; m++) {
+    for (int n = 0; n < basis.nMax(m); n++) {
+        for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
+            states.push_back({m, n, n_z});
+        }
+    }
+}
+
+int totalStates = states.size();
+arma::mat result = arma::zeros(nbR, nbZ);
+
+//somme sur a et b nommé i et j dans le code
+for (int i = 0; i < totalStates; ++i) {
+    int m = states[i].m;
+    int n = states[i].n;
+    int n_z = states[i].n_z;
+
+    arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
+    for (int j = 0; j < totalStates; ++j) {
+        int mp = states[j].m;
+
+        if (m == mp) {
+            double rho_val = rho(i, j);
+                
+                
+            int np = states[j].n;
+            int n_zp = states[j].n_z;
+
+            arma::mat funcB = basis.basisFunc(mp, np, n_zp, zVals, rVals);
+            result += funcA % funcB * rho_val;
+        }
+    }
+}
+```
 
 ---
 
-# V. - Résultats
+# IV.4. - Troisième Optimisation : Symétrie de la matrice 
 
-1. Wrapper python
-2. Résultats et benchmarks
-## 3. Outils de profilage
 
----
+.
+```cpp
 
-# Merci de nous avoir écouté
+// 1. Création d'un tableau pour savoir à quel triplet quantique un numéro est associé
+std::vector<BasisState> states;
+for (int m = 0; m < basis.mMax; m++) {
+    for (int n = 0; n < basis.nMax(m); n++) {
+        for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
+            states.push_back({m, n, n_z});
+        }
+    }
+}
 
-.hcenter[
-## Avez-vous des questions ?
-]
+int totalStates = states.size();
+arma::mat result = arma::zeros(nbR, nbZ);
 
-<br>
+// 2. Boucle optimisée par blocs m et exploitant la symétrie i < j
+for (int i = 0; i < totalStates; i++) {
+    int i = indices[idx_i];
+    arma::mat funcA = basis.basisFunc(states[i].m, states[i].n, states[i].n_z, zVals, rVals);
 
-.hcenter[
-J.M. Assogba - M. Glessmer - M. Lecompagnon
-]
+    // A. Traitement du terme diagonal (i == j)
+    double rho_ii = rho(i, i);
+    if (rho_ii != 0.0) result += (funcA % funcA) * rho_ii;
+            
+    // B. Traitement des termes symétriques (j > i) -> On multiplie par 2
+    for (int j = i + 1; j < totalStates; j++) {
+        double rho_ij = rho(i, j); // Égal à rho(j, i) par symétrie
 
-<br>
+        if (rho_ij != 0.0) {
+            arma::mat funcB = basis.basisFunc(states[j].m, states[j].n, states[j].n_z, zVals, rVals);
+            result += 2.0 * (funcA % funcB) * rho_ij;
+        }
+    }
+}
+```
 
-------------------------------------
-
-<br>
-
-.hcenter.shadow.w50[![](images/density.png)]
 
     </textarea>
 
@@ -1596,6 +1703,8 @@ doc.add_root(plt.gridplot(
 Bokeh.embed.add_document_standalone(doc, document.getElementById("bokeh01"));
 
     // ===== END =====
+
+
 
     </script>
     <script src="gitgraphs.js" type="text/javascript"></script>
