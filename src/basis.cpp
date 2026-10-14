@@ -43,6 +43,7 @@ arma::vec Basis::rPart(arma::vec r, int m, int n) {
      * 
      */
     int abs_m = std::abs(m);
+    Poly poly;
 
     //Calculer le facteur de normalisation
     double facteur = (1.0 / (br * std::sqrt(M_PI))) * std::sqrt(factoriel(n) / factoriel(n + abs_m));
@@ -57,8 +58,8 @@ arma::vec Basis::rPart(arma::vec r, int m, int n) {
     arma::vec fact_vec = arma::pow(r / br, abs_m);
 
     //Calculer les polynômes de Laguerre
-    Poly::calcLaguerre(abs_m + 1, n + 1, puissance);
-    arma::vec laguerre = Poly::laguerre(abs_m, n);
+    poly.calcLaguerre(abs_m + 1, n + 1, puissance);
+    arma::vec laguerre = poly.laguerre(abs_m, n);
 
     //Combiner tous les éléments pour obtenir la fonction de base radiale
     return facteur * fact_vec % laguerre % exponentielle;
@@ -79,6 +80,7 @@ arma::vec Basis::zPart(arma::vec z, int n_z) {
      */
     //Calculer le facteur de normalisation
     double facteur = 1.0 / (std::sqrt(bz) * sqrt(std::pow(2.0, n_z) * factoriel(n_z) * std::sqrt(M_PI)));
+    Poly poly;
 
     //Calculer les puissances et l'exponentielle
     arma::vec puissance = arma::square(z) / (bz * bz);
@@ -87,8 +89,8 @@ arma::vec Basis::zPart(arma::vec z, int n_z) {
     arma::vec exponentielle = arma::exp(-puissance / 2.0);
 
     //Calculer les polynômes d'Hermite
-    Poly::calcHermite(n_z + 1, puissance);
-    arma::vec hermite = Poly::hermite(n_z);
+    poly.calcHermite(n_z + 1, puissance);
+    arma::vec hermite = poly.hermite(n_z);
 
     //Combiner tous les éléments pour obtenir la fonction de base z
     return facteur * hermite % exponentielle;
