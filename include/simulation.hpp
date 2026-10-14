@@ -74,4 +74,36 @@ arma::mat rho_linearized_again(const arma::vec rVals, const arma::vec zVals, int
  */
 arma::mat rho_optimized_m(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
 
+/**
+ * @brief utilisation de la symetrie de la matrice
+ * @param rVals Vecteur des coordonnées r
+ * @param zVals Vecteur des coordonnées z
+ * @param nbR Nombre de points sur r
+ * @param nbZ Nombre de points sur z
+ * @return arma::mat 
+ */
+arma::mat rho_symmetric(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+
+/**
+ * @brief utilisation de la symetrie de la matrice ainsi que minimisation des alocation mémoire
+ * @param rVals Vecteur des coordonnées r
+ * @param zVals Vecteur des coordonnées z
+ * @param nbR Nombre de points sur r
+ * @param nbZ Nombre de points sur z
+ * @return arma::mat 
+ */
+arma::mat rho_symmetric_optimized(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+
+/**
+ * @brief sauvegarde maximal de data et allocation minimal
+ * @param rVals Vecteur des coordonnées r
+ * @param zVals Vecteur des coordonnées z
+ * @param nbR Nombre de points sur r
+ * @param nbZ Nombre de points sur z
+ * @return arma::mat 
+ */
+arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+
+arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+
 #endif

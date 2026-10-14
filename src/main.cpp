@@ -1,15 +1,14 @@
 /**
  * @file main.cpp
  * @author Mathéo LECOMPAGNON
- * @brief Ce fichier décrit la boucle principale du programme.
- * @version 0.1
- * @date 2026-09-09
- * @copyright Copyright (c) 2026
+ * @brief Fichier de test et de benchmark des performances pour le calcul de rho.
  */
 
 #include <iostream>
 #include <armadillo>
 #include "simulation.hpp" 
+#include <cstdlib>
+
 
 #ifdef BENCH
 
@@ -144,28 +143,46 @@ int main() {
     #else
 
     try {
-        int nbR = 10;
-        int nbZ = 10;
+      // Force OpenBLAS à utiliser tous les cœurs disponibles
+      setenv("OPENBLAS_NUM_THREADS", "8", 1);
+      setenv("MKL_NUM_THREADS", "8", 1);
+      setenv("OMP_NUM_THREADS", "8", 1);
+        int nbR = 300;
+        int nbZ = 300;
 
-        // Création de 10 valeurs pour r (ex: de 0.0 à 5.0) et z (ex: de -5.0 à 5.0)
+        // Création des grilles de points pour r et z
         arma::vec rVals = arma::linspace(0.0, 5.0, nbR);
         arma::vec zVals = arma::linspace(-5.0, 5.0, nbZ);
 
-        std::cout << "=== Test de rho_naif ===" << std::endl;
-        std::cout << "Génération de " << nbR << " points pour r et " << nbZ << " points pour z." << std::endl;
+        std::cout << "=== Lancement du Benchmark ===" << std::endl;
+        std::cout << "Grille : " << nbR << " x " << nbZ << " points." << std::endl;
+        std::cout << "----------------------------------------" << std::endl;
 
-        // Appel de la fonction rho_naif avec les paramètres requis
-        arma::mat rho = rho_naif(rVals, zVals, nbR, nbZ);
+        // Chronomètre Armadillo
+        arma::wall_clock timer;
 
-        std::cout << "rho_naif exécuté avec succès !" << std::endl;
-        std::cout << "Dimensions de la matrice résultat : " << rho.n_rows << " x " << rho.n_cols << std::endl;
+        // 1. Benchmark de rho_naif
+        timer.tic();
+        arma::mat rho_naive = rho_naif(rVals, zVals, nbR, nbZ);
+        double time_naif = timer.toc();
+        std::cout << "[1/2] rho_naif exécuté en : " << time_naif << " secondes." << std::endl;
 
-        // Vérification et affichage selon l'état de la matrice
-        if (rho.is_zero()) {
-            std::cout << "Information : La matrice résultat est entièrement nulle." << std::endl;
+        // 2. Benchmark de rho_memory_max
+        timer.tic();
+        arma::mat rho_optimized = rho_fabulous(rVals, zVals, nbR, nbZ);
+        double time_opt = timer.toc();
+        std::cout << "[2/2] rho_memory_max exécuté en : " << time_opt << " secondes." << std::endl;
+
+        std::cout << "----------------------------------------" << std::endl;
+
+        // 3. Calcul du facteur d'accélération (Speedup)
+        if (time_opt > 0.0) {
+            double speedup = time_naif / time_opt;
+            std::cout << ">>> RÉSULTAT DU BENCHMARK <<<" << std::endl;
+            std::cout << "rho_memory_max est " << speedup << " fois plus rapide que rho_naif !" << std::endl;
+            std::cout << "Gain de temps : " << ((time_naif - time_opt) / time_naif) * 100.0 << "%" << std::endl;
         } else {
-            std::cout << "Affichage de la matrice résultat :" << std::endl;
-            rho.print();
+            std::cout << "Calculs trop rapides pour mesurer un speedup significatif." << std::endl;
         }
 
     } catch (const std::exception& e) {
