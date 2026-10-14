@@ -46,7 +46,7 @@ arma::vec Basis::rPart(arma::vec r, int m, int n) {
     Poly poly;
 
     //Calculer le facteur de normalisation
-    double facteur = (1.0 / (br * std::sqrt(M_PI))) * std::sqrt(factoriel(n) / factoriel(n + abs_m));
+    double facteur = (1.0 / (br * std::sqrt(M_PI))) * std::sqrt((double)factoriel(n) / (double)factoriel(n + abs_m));
 
     //Calculer les puissances et l'exponentielle
     arma::vec puissance = arma::square(r) / (br * br);
@@ -79,17 +79,19 @@ arma::vec Basis::zPart(arma::vec z, int n_z) {
      * 
      */
     //Calculer le facteur de normalisation
-    double facteur = 1.0 / (std::sqrt(bz) * sqrt(std::pow(2.0, n_z) * factoriel(n_z) * std::sqrt(M_PI)));
+
+    double facteur = 1.0 / (std::sqrt(bz) * sqrt(std::pow(2.0, n_z) * (double)factoriel(n_z) * std::sqrt(M_PI)));
     Poly poly;
 
     //Calculer les puissances et l'exponentielle
-    arma::vec puissance = arma::square(z) / (bz * bz);
+    arma::vec base = z / bz;
+    arma::vec puissance = arma::square(base);
 
     //Calculer l'exponentielle
     arma::vec exponentielle = arma::exp(-puissance / 2.0);
 
     //Calculer les polynômes d'Hermite
-    poly.calcHermite(n_z + 1, puissance);
+    poly.calcHermite(n_z + 1, base);
     arma::vec hermite = poly.hermite(n_z);
 
     //Combiner tous les éléments pour obtenir la fonction de base z

@@ -24,6 +24,10 @@
 #include <vector>
 
 #include "basis.hpp"
+#include "trucation.cpp"
+
+#define N 10
+#define Q 2
 
 /* ======================================================================
  *  1. Code C++ « pur » : aucune dépendance à Python
@@ -55,6 +59,47 @@ static std::vector<double> phi(int m, int n, int nz, double br, double bz,
     for (std::size_t i = 0; i < pts.size(); ++i)
         out[i] = Z(i) * R(i);             // produit terme à terme : phi(r_i, z_i)
     return out;
+}
+
+static std::vector<double> rho_naif(double br, double bz, const std::vector<PointRZ>& pts){
+
+    arma::mat rho;
+
+    if (!rho.load("rho.arma")) {          // load renvoie false en cas d'échec
+        std::cerr << "Impossible de lire rho.arma\n";
+        return 1;
+    }
+
+    int m_max = m_max(N,Q); 
+    
+    arma::vec result_vec(pts.n_elem, arma::fill::zeros);
+
+    /*somme sur touss les point a*/
+    arma::mat result = arma::zeros(nbR, nbZ); // number of points on r- and z- axes
+    for (int m = 0; m < basis.mMax; m++)
+    {
+        for (int n = 0; n < basis.nMax(m); n++)
+        {
+            for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++)
+            {
+
+                
+                for (int mp = 0; mp < basis.mMax; mp++)
+                {
+                    for (int np = 0; np < basis.nMax(mp); np++)
+                    {
+                        for (int n_zp = 0; n_zp < basis.n_zMax(mp, np); n_zp++)
+                        {
+                            arma::mat funcA = basis.basisFunc( m,  n,  n_z, zVals, rVals);
+                            arma::mat funcB = basis.basisFunc(mp, np, n_zp, zVals, rVals);
+                            result += funcA % funcB * rho(m, n, n_z, mp, np, n_zp); // mat += mat % mat * double
+                        }
+                        }
+                }
+            }
+        }
+    }
+
 }
 
 /* ======================================================================
