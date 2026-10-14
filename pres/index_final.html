@@ -66,48 +66,7 @@ Le but était de la calculer puis de l'afficher.
 
 .row[
 .column.w50.hcenter[
-
-1. Théorie
-
-    1. Densité locale et base
-    2. Polynômes d'Hermite et de Laguerre
-    3. Troncation de la base
-
-2. Gestion du projet
-
-    1. Choix des outils utilisés
-    2. Répartition du travail
-    3. Arborescence du projet
-    4. Makefile
-
-3. Implémentation des classes principales
-
-    1. Les différentes interfaces
-    2. Implémentation des polynômes
-    3. Implémentation de la troncature
-    4. Implémentation de la base
-]
-.column.w50.hcenter[
-4. Implémentation de la densité
-
-    1. Méthode naïve
-    2. optimisation
-
-5. Résultats
-    
-    1. Wrapper python
-    2. Résultats et benchmarks
-    3. Outils de profilage
-]
-]
-
----
-
-# Sommaire
-
-.row[
-.column.w50.hcenter[
-<ol class="toc" style="list-style-type: upper-roman; padding-left: 20px; text-align: left;">
+<ol class="toc" style="list-style-type: upper-roman; padding-left: 20px; padding-top: 30px; text-align: left;">
   <li><strong>Théorie</strong>
     <ol style="list-style-type: decimal; padding-left: 20px;">
       <li>Densité locale et base</li>
@@ -137,7 +96,7 @@ Le but était de la calculer puis de l'afficher.
 ]
 
 .column.w50.hcenter[
-<ol class="toc" start="4" style="list-style-type: upper-roman; padding-left: 20px; text-align: left;">
+<ol class="toc" start="4" style="list-style-type: upper-roman; padding-left: 20px; padding-top: 30px; text-align: left;">
   <li><strong>Implémentation de la densité</strong>
     <ol style="list-style-type: decimal; padding-left: 20px;">
       <li>Méthode naïve</li>
@@ -395,6 +354,12 @@ Racine
 
 ---
 
+# III. Implémentation des classes principales
+
+## 1. Les différentes interfaces
+
+---
+
 # III.1. - Polynômes : implémentation (classe `Poly`)
 
 .block[
@@ -450,9 +415,7 @@ void testMandatory0(void)
 
 ```cpp
    void testHermite(){
-
       arma::vec evaluatingPoints = {-1.3737, 0.4167, -3.2845, 2.4175, 1.1056};
-
       Poly poly;
       poly.calcHermite(6, evaluatingPoints);
 
@@ -838,6 +801,13 @@ void test_basisfunc() {
 
 ---
 
+# III. Implémentation des classes principales
+
+1. Les différentes interfaces
+## 2. Implémentation des polynômes
+
+---
+
 class: top
 # III.2. - `Poly::calcHermite` : calcul des polynômes d'Hermite
 
@@ -1118,78 +1088,15 @@ Même méthode d'évaluation que pour Hermite. $L_i^m$ donne une relation de ré
 
 ---
 
+# III. Implémentation des classes principales
+
+1. Les différentes interfaces
+2. Implémentation des polynômes
+## 3. Implémentation de la troncature
+
+---
+
 # III.3. - Implémentation de la troncature
-
----
-
-# III.4. - Implémentation de la base
-
----
-
-class: middle
-# IV. - Implémentation de la densité
-
-.large[
-1. Méthode naïve
-2. optimisation
-]
-
----
-
-# IV.1. - Méthode naïve
-
----
-
-# IV.2. - Optimisation
-
----
-
-class: middle
-# V. - Résultats
-
-.large[
-1. Wrapper python
-2. Résultats et benchmarks
-3. Outils de profilage
-]
-
----
-
-# V.1. - Wrapper python
-
----
-
-# V.2. - Résultats et benchmarks
-
----
-
-# V.3. - Outils de profilage
-
----
-
-# Merci de nous avoir écouté
-
-.hcenter[
-## Avez-vous des questions ?
-]
-
-<br>
-
-.hcenter[
-J.M. Assogba - M. Glessmer - M. Lecompagnon
-]
-
-<br>
-
-------------------------------------
-
-<br>
-
-.hcenter.shadow.w50[![](images/density.png)]
-
----
-
-# III.3 Implémentation de la troncature
 
 .block[
 ### Définition des paramètres
@@ -1208,7 +1115,7 @@ Les nombres quantiques sont alors bornés par :
 
 ---
 
-# III.3 Implémentation de la troncature (suite)
+# III.3. - Implémentation de la troncature (suite)
 
 .block[
 ### Traduction algorithmique en C++
@@ -1240,7 +1147,16 @@ double nz_max(int m, int n, int N, double Q) {
 
 ---
 
-# IV.1 Structure de la classe Basis (`basis.hpp`)
+# III. Implémentation des classes principales
+
+1. Les différentes interfaces
+2. Implémentation des polynômes
+3. Implémentation de la troncature
+## 4. Implémentation de la base
+
+---
+
+# III.4 - Basis : Structure de la classe Basis (`basis.hpp`)
 
 .block[
 ### Rôle de la classe
@@ -1258,7 +1174,7 @@ La classe `Basis` génère les fonctions d'onde spatiales en coordonnées cylind
 
 ---
 
-# IV.2 Constructeur (`basis.cpp`)
+# III.4 - Basis : Constructeur (`basis.cpp`)
 
 .block[
 ### Initialisation des bornes quantiques
@@ -1299,7 +1215,7 @@ Basis::Basis(double _br, double _bz, int _N, double _Q) : br(_br), bz(_bz), N(_N
 
 ---
 
-# IV.3 Fonction factorielle
+# III.4 - Basis : Fonction factorielle
 
 .block[
 ### Factorielle en `double`
@@ -1324,7 +1240,7 @@ Le mot-clé `static` limite la fonction à `basis.cpp`.
 
 ---
 
-# IV.4 Partie radiale (`rPart`)
+# III.4 - Basis : Partie radiale (`rPart`)
 
 .block[
 ### Composante radiale
@@ -1361,7 +1277,7 @@ arma::vec Basis::rPart(arma::vec r, int m, int n) {
 
 ---
 
-# IV.4 (suite) Partie radiale : points clés
+# III.4 - Basis : Partie radiale : points clés
 
 .block[
 ### Lecture du code
@@ -1376,7 +1292,7 @@ arma::vec Basis::rPart(arma::vec r, int m, int n) {
 
 ---
 
-# IV.5 Partie axiale (`zPart`)
+# III.4 - Basis : Partie axiale (`zPart`)
 
 .block[
 ### Composante selon `$z$`
@@ -1413,7 +1329,7 @@ Hermite s'évalue en `$z / b_z$`, tandis que l'exponentielle utilise `$z^2 / b_z
 
 ---
 
-# IV.6 Produit tensoriel (`basisFunc`)
+# III.4 - Basis : Produit tensoriel (`basisFunc`)
 
 
 .block[
@@ -1438,7 +1354,80 @@ arma::mat Basis::basisFunc(int m , int n , int n_z , arma::vec z, arma::vec r) {
 
 ---
 
+class: middle
+# IV. - Implémentation de la densité
 
+.large[
+1. Méthode naïve
+2. optimisation
+]
+
+---
+
+# IV. - Implémentation de la densité
+
+## 1. Méthode naïve
+
+---
+
+# IV. - Implémentation de la densité
+
+1. Méthode naïve
+## 2. optimisation
+
+---
+
+class: middle
+# V. - Résultats
+
+.large[
+1. Wrapper python
+2. Résultats et benchmarks
+3. Outils de profilage
+]
+
+---
+
+# V. - Résultats
+
+## 1. Wrapper python
+
+---
+
+# V. - Résultats
+
+1. Wrapper python
+## 2. Résultats et benchmarks
+
+---
+
+# V. - Résultats
+
+1. Wrapper python
+2. Résultats et benchmarks
+## 3. Outils de profilage
+
+---
+
+# Merci de nous avoir écouté
+
+.hcenter[
+## Avez-vous des questions ?
+]
+
+<br>
+
+.hcenter[
+J.M. Assogba - M. Glessmer - M. Lecompagnon
+]
+
+<br>
+
+------------------------------------
+
+<br>
+
+.hcenter.shadow.w50[![](images/density.png)]
 
     </textarea>
 
