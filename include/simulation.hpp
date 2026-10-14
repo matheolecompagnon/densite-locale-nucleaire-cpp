@@ -8,13 +8,11 @@
  * @copyright Copyright (c) 2026
  * 
  */
-#ifndef __TRUNCATION_HPP__
-#define __TRUNCATION_HPP__
+#ifndef __SIMULATION_HPP__
+#define __SIMULATION_HPP__
 
-int m_max(int N, double Q);
+#include <armadillo>
 
-double n_max(int m_max, int m);
-
-double nz_max(int m, int n, int N, double Q);
+arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
 
 #endif

@@ -11,11 +11,42 @@
 #include "basis.hpp"
 
 
+
 Basis::Basis(double _br, double _bz, int _N, double _Q) : br(_br), bz(_bz), N(_N), Q(_Q) {
     /**
-     * @brief Calculer mmax, nMax et n_zMax en fonction de N et Q (Troncation)
-     * 
+     * @brief Calculer mMax, nMax et n_zMax en fonction de N et Q (Troncation)
      */
+    mMax = 0;
+    double q_pow = std::pow(Q, 2.0 / 3.0);
+    double nu = ((double)(N + 2)) * q_pow + 1.0 / 2.0;
+    
+    // 1. Calcul de mMax
+    while(nu >= 1.0) {
+        mMax++;
+        nu -= Q; // Correction de l'affectation
+    }
+
+    // 2. Initialisation du vecteur nMax
+    nMax.set_size(mMax);
+    for(int m = 0; m < mMax; ++m) {
+        nMax(m) = (mMax - m - 1) / 2 + 1;
+    }
+
+    // 3. Initialisation directe de la matrice n_zMax (arma::imat)
+    int max_n = arma::max(nMax);
+    n_zMax.set_size(mMax, max_n);
+    n_zMax.fill(0); // Met des zéros dans les cellules inutilisées de la matrice
+
+    for(int m = 0; m < mMax; ++m) {
+        for(int n = 0; n < nMax(m); ++n) {
+            int i = m + 2 * n + 1;
+            // Calcul de nu(i) = (N + 2) * Q^(2/3) + 1/2 - i * Q
+            double nu_i = ((double)(N + 2)) * q_pow + 0.5 - ((double)i) * Q;
+            
+            // Stockage de la valeur entière de nu(i) dans la matrice n_zMax
+            n_zMax(m, n) = static_cast<int>(nu_i);
+        }
+    }
 }
 
 int factoriel(int n) {
@@ -107,3 +138,4 @@ arma::mat Basis::basisFunc(int m , int n , int n_z , arma::vec z, arma::vec r) {
     // Produit tensoriel pour obtenir la matrice finale
     return z_part * r_part.t(); 
 }
+

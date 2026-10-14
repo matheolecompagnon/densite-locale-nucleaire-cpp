@@ -10,7 +10,7 @@ LDLIBS          := -larmadillo
 # Options par défaut (surchargées par les cibles debug, release et test)
 OPTIONS := $(OPTIONS_DEBUG)
 
-files   := basis poly
+files   := basis poly simulation
 objects := $(files:%=bin/%.o)
 
 main_exec    := exec
