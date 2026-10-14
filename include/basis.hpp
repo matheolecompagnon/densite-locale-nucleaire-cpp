@@ -67,7 +67,7 @@ class Basis {
          * @param r radius coordinate
          * @return arma::mat 
          */
-        arma::mat basisFunc(int m, int n, int n_z, arma::vec z, arma::vec r);
+        arma::mat basisFunc(int m, int n, int n_z, const arma::vec z, const arma::vec r);
 
         /**
          * @brief basis deformation parameter br

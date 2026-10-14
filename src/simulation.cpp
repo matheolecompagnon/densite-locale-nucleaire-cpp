@@ -561,6 +561,7 @@ arma::mat rho_symmetric_optimized(const arma::vec rVals, const arma::vec zVals, 
 
 
 
+
 arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ){
 
     Basis basis(BR, BZ, N, Q);
@@ -573,12 +574,13 @@ arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, 
 
     std::vector<BasisState> states;
     std::vector<arma::mat> func;
-
+    int i = 0;
     for (int m = 0; m < basis.mMax; m++) {
         for (int n = 0; n < basis.nMax(m); n++) {
             for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
                 states.push_back({m, n, n_z});
                 func.push_back(basis.basisFunc(m, n, n_z, zVals, rVals));
+                i++;
             }
         }
     }
@@ -594,6 +596,7 @@ arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, 
         indices_par_m[states[idx].m].push_back(idx);
     }
 
+
     arma::mat result = arma::zeros(nbR, nbZ);
 
     for (int m = 0; m < basis.mMax; ++m) {
@@ -606,7 +609,7 @@ arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, 
             
 
             double rho_ii = rho(i, i);
-            result += (func[i]% func[j]) * rho_ii;
+            result += (func[i] % func[i]) * rho_ii;
             
 
             for (int idx_j = idx_i + 1; idx_j < size; ++idx_j) {
@@ -618,6 +621,87 @@ arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, 
             }
         }
     }
+
+    return result;
+}
+
+arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ){
+
+    Basis basis(BR, BZ, N, Q);
+
+    arma::mat rho;
+    if (!rho.load("rho.arma", arma::arma_ascii)) {
+        std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
+        return arma::zeros(nbR, nbZ);
+    }
+
+    std::vector<BasisState> states;
+    for (int m = 0; m < basis.mMax; m++) {
+        for (int n = 0; n < basis.nMax(m); n++) {
+            for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
+                states.push_back({m, n, n_z});
+            }
+        }
+    }
+
+    
+
+    int totalStates = states.size();
+    if (rho.n_rows < (unsigned int)totalStates || rho.n_cols < (unsigned int)totalStates) {
+        std::cerr << "Erreur : La matrice rho est trop petite !" << std::endl;
+        return arma::zeros(nbR, nbZ);
+    }
+
+    std::vector<std::vector<int>> indices_par_m(basis.mMax);
+    for (int idx = 0; idx < totalStates; ++idx) {
+        indices_par_m[states[idx].m].push_back(idx);
+    }
+
+
+    int max_K_m = 0;
+    for (int m = 0; m < basis.mMax; m++) {
+        if (indices_par_m[m].size() > (size_t)max_K_m) {
+            max_K_m = indices_par_m[m].size();
+        }
+    }
+
+    // Allouer une seule fois le buffer géant en dehors de la boucle
+    arma::mat F_global(nbR * nbZ, max_K_m);
+
+    arma::mat result = arma::zeros(nbR, nbZ);
+
+for (int m = 0; m < basis.mMax; m++) {
+    const auto& indices = indices_par_m[m];
+    int K_m = indices.size();
+    if (K_m == 0) continue;
+
+    // On revient à l'allocation locale directe (qui était plus rapide en -O2)
+    arma::mat F_m(nbR * nbZ, K_m);
+    for (int k = 0; k < K_m; ++k) {
+        int idx = indices[k];
+        const auto& state = states[idx];
+        F_m.col(k) = arma::vectorise(basis.basisFunc(state.m, state.n, state.n_z, zVals, rVals));
+    }
+
+    // 1. Extraire le sous-bloc rho_m
+    arma::uvec idx_vec = arma::conv_to<arma::uvec>::from(indices);
+    arma::mat rho_m = rho.submat(idx_vec, idx_vec);
+
+    // 2. PRODUIT INTERMÉDIAIRE (Taille : (nbR*nbZ) x K_m)
+    arma::mat A = F_m * rho_m;
+
+    // 3. EXTRACTION DIRECTE DE LA DIAGONALE (Zéro matrice S x S en mémoire !)
+    // Le symbole % fait un produit élément par élément (Hadamard), et arma::sum somme sur les colonnes
+    arma::vec diag_R_m = arma::sum(A % F_m, 1);
+
+    // 4. Redimensionner le vecteur diagonale en grille 2D et accumuler
+    result += arma::reshape(diag_R_m, nbR, nbZ);
+}
+   
+
+
+
+
 
     return result;
 }

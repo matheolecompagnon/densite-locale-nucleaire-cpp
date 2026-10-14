@@ -102,6 +102,8 @@ arma::mat rho_symmetric_optimized(const arma::vec rVals, const arma::vec zVals, 
  * @param nbZ Nombre de points sur z
  * @return arma::mat 
  */
-arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ););
+arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+
+arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
 
 #endif
