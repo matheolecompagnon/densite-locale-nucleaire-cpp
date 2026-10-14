@@ -11,7 +11,7 @@
 #define Q 1.3
 
 Bench bench_naif, bench_kronecker, bench_factorized, bench_linearized, bench_linearized_again, 
-bench_optimized_m;
+bench_optimized_m, bench_symmetric, bench_symmetric_optimized, bench_memory_max, bench_fabulous;
 
 arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ){
 
@@ -463,7 +463,7 @@ arma::mat rho_optimized_m(const arma::vec rVals, const arma::vec zVals, int nbR,
             }
         }
     }
-
+    
     BENCH_END(bench_optimized_m);
 
     return result;
@@ -503,6 +503,8 @@ arma::mat rho_symmetric(const arma::vec rVals, const arma::vec zVals, int nbR, i
 
     arma::mat result = arma::zeros(nbR, nbZ);
 
+    BENCH_START(bench_symmetric);
+
     // 3. Boucle optimisée par blocs m et exploitant la symétrie i < j
     for (int m = 0; m < basis.mMax; ++m) {
         const auto& indices = indices_par_m[m];
@@ -533,6 +535,8 @@ arma::mat rho_symmetric(const arma::vec rVals, const arma::vec zVals, int nbR, i
             }
         }
     }
+
+    BENCH_END(bench_symmetric);
 
     return result;
 }
@@ -572,6 +576,8 @@ arma::mat rho_symmetric_optimized(const arma::vec rVals, const arma::vec zVals, 
     // Variable temporaire pour éviter de réallouer des matrices de taille nbR x nbZ à chaque tour
     arma::mat term; 
 
+    BENCH_START(bench_symmetric_optimized);
+
     for (int m = 0; m < basis.mMax; ++m) {
         const auto& indices = indices_par_m[m];
         int size = indices.size();
@@ -602,10 +608,10 @@ arma::mat rho_symmetric_optimized(const arma::vec rVals, const arma::vec zVals, 
         }
     }
 
+    BENCH_END(bench_symmetric_optimized);
+
     return result;
 }
-
-
 
 
 arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ){
@@ -645,6 +651,8 @@ arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, 
 
     arma::mat result = arma::zeros(nbR, nbZ);
 
+    BENCH_START(bench_memory_max);
+
     for (int m = 0; m < basis.mMax; ++m) {
         const auto& indices = indices_par_m[m];
         int size = indices.size();
@@ -667,6 +675,8 @@ arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, 
             }
         }
     }
+
+    BENCH_END(bench_memory_max);
 
     return result;
 }
@@ -716,38 +726,37 @@ arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, in
 
     arma::mat result = arma::zeros(nbR, nbZ);
 
-for (int m = 0; m < basis.mMax; m++) {
-    const auto& indices = indices_par_m[m];
-    int K_m = indices.size();
-    if (K_m == 0) continue;
+    BENCH_START(bench_fabulous);
 
-    // On revient à l'allocation locale directe (qui était plus rapide en -O2)
-    arma::mat F_m(nbR * nbZ, K_m);
-    for (int k = 0; k < K_m; ++k) {
-        int idx = indices[k];
-        const auto& state = states[idx];
-        F_m.col(k) = arma::vectorise(basis.basisFunc(state.m, state.n, state.n_z, zVals, rVals));
+    for (int m = 0; m < basis.mMax; m++) {
+        const auto& indices = indices_par_m[m];
+        int K_m = indices.size();
+        if (K_m == 0) continue;
+
+        // On revient à l'allocation locale directe (qui était plus rapide en -O2)
+        arma::mat F_m(nbR * nbZ, K_m);
+        for (int k = 0; k < K_m; ++k) {
+            int idx = indices[k];
+            const auto& state = states[idx];
+            F_m.col(k) = arma::vectorise(basis.basisFunc(state.m, state.n, state.n_z, zVals, rVals));
+        }
+
+        // 1. Extraire le sous-bloc rho_m
+        arma::uvec idx_vec = arma::conv_to<arma::uvec>::from(indices);
+        arma::mat rho_m = rho.submat(idx_vec, idx_vec);
+
+        // 2. PRODUIT INTERMÉDIAIRE (Taille : (nbR*nbZ) x K_m)
+        arma::mat A = F_m * rho_m;
+
+        // 3. EXTRACTION DIRECTE DE LA DIAGONALE (Zéro matrice S x S en mémoire !)
+        // Le symbole % fait un produit élément par élément (Hadamard), et arma::sum somme sur les colonnes
+        arma::vec diag_R_m = arma::sum(A % F_m, 1);
+
+        // 4. Redimensionner le vecteur diagonale en grille 2D et accumuler
+        result += arma::reshape(diag_R_m, nbR, nbZ);
     }
-
-    // 1. Extraire le sous-bloc rho_m
-    arma::uvec idx_vec = arma::conv_to<arma::uvec>::from(indices);
-    arma::mat rho_m = rho.submat(idx_vec, idx_vec);
-
-    // 2. PRODUIT INTERMÉDIAIRE (Taille : (nbR*nbZ) x K_m)
-    arma::mat A = F_m * rho_m;
-
-    // 3. EXTRACTION DIRECTE DE LA DIAGONALE (Zéro matrice S x S en mémoire !)
-    // Le symbole % fait un produit élément par élément (Hadamard), et arma::sum somme sur les colonnes
-    arma::vec diag_R_m = arma::sum(A % F_m, 1);
-
-    // 4. Redimensionner le vecteur diagonale en grille 2D et accumuler
-    result += arma::reshape(diag_R_m, nbR, nbZ);
-}
    
-
-
-
-
+    BENCH_END(bench_fabulous);
 
     return result;
 }
