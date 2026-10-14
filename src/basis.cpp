@@ -112,7 +112,8 @@ arma::vec Basis::zPart(arma::vec z, int n_z) {
      */
     //Calculer le facteur de normalisation
 
-    double facteur = 1.0 / (std::sqrt(bz) * sqrt(std::pow(2.0, n_z) * (double)factoriel(n_z) * std::sqrt(M_PI)));
+    double facteur = 1.0 / (
+        std::sqrt(bz * std::pow(2.0, n_z) * (double)factoriel(n_z) * std::sqrt(M_PI)));
     Poly poly;
 
     //Calculer les puissances et l'exponentielle

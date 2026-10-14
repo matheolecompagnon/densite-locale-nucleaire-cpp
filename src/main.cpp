@@ -24,7 +24,7 @@ int main() {
         std::cout << "Génération de " << nbR << " points pour r et " << nbZ << " points pour z." << std::endl;
 
         // Appel de la fonction rho_naif avec les paramètres requis
-        arma::mat rho = rho_naif(rVals, zVals, nbR, nbZ);
+        arma::mat rho = rho_memory_max(rVals, zVals, nbR, nbZ);
 
         std::cout << "rho_naif exécuté avec succès !" << std::endl;
         std::cout << "Dimensions de la matrice résultat : " << rho.n_rows << " x " << rho.n_cols << std::endl;
