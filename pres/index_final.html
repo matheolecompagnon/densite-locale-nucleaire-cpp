@@ -1823,6 +1823,122 @@ PyMODINIT_FUNC PyInit_simulation_cpp(void) {
     return PyModule_Create(&simulationmodule);
 }
 ```
+---
+
+valgrind :
+
+```sh
+make
+valgrind
+```
+
+```valgrind
+==161699== HEAP SUMMARY:
+==161699==     in use at exit: 0 bytes in 0 blocks
+==161699==   total heap usage: 29,934,518 allocs, 29,934,518 frees, 52,791,166,540 bytes allocated
+==161699==
+==161699== All heap blocks were freed -- no leaks are possible
+==161699==
+==161699== For lists of detected and suppressed errors, rerun with: -s
+==161699== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
+perf :
+
+```
+make exec OPTIONS="-Wall -Wextra -Werror -Iinclude -O2 -g -fno-omit-frame-pointer -DBENCH"
+# Temps, IPC, cache-misses (3 répétitions)
+perf stat -r 3 -e cycles,instructions,cache-references,cache-misses,branch-misses ./exec
+
+# Où passe le temps
+perf record -F 999 --call-graph dwarf ./exec
+perf report --no-children
+```
+
+Pour voir où il passait le temps, le problème était que l'on ne voyait que des adresses
+
+```
+    14,539,564,037      armv8_pmuv3_0/cycles/u                                                  ( +-  0.15% )
+     1,020,732,189      armv8_pmuv3_1/cycles/u                                                  ( +- 17.32% )  (17.29%)
+    76,090,760,718      armv8_pmuv3_0/instructions/u     #    5.23  insn per cycle              ( +-  0.00% )
+       391,055,998      armv8_pmuv3_1/instructions/u     #    0.38  insn per cycle              ( +- 16.79% )  (17.29%)
+    25,874,426,152      armv8_pmuv3_0/cache-references/u                                        ( +-  0.06% )
+       104,312,410      armv8_pmuv3_1/cache-references/u                                        ( +- 16.36% )  (17.29%)
+       134,361,361      armv8_pmuv3_0/cache-misses/u     #    0.52% of all cache refs           ( +-  3.09% )
+         1,541,754      armv8_pmuv3_1/cache-misses/u     #    1.48% of all cache refs           ( +- 15.62% )  (17.29%)
+        31,914,939      armv8_pmuv3_0/branch-misses/u                                           ( +-  0.09% )
+            58,606      armv8_pmuv3_1/branch-misses/u                                           ( +- 15.20% )  (17.29%)
+```
+
+---
+
+# II. Retex & Gestion de projet : Leçons apprises
+
+.hcenter.vcenter.large[
+1. Documentation : Le piège de l'évidence à chaud
+2. Planification : La sous-estimation de la charge
+3. Architecture & Git : L'enfer des conflits de merge
+4. Soutenance : Le piège du sprint final
+]
+
+---
+
+# VI.1 - Documentation : Le piège de l'évidence à chaud
+
+.block[
+### Le constat
+- **Le piège du "c'est évident"** : Sur le moment, la logique de notre code nous paraissait tellement limpide qu'on n'a pas pris le temps de la commenter ni de documenter nos choix.
+- **Le réveil difficile** : Dix jours plus tard, face à notre propre code, c'était le néant total. On a perdu un temps précieux à ré-analyser notre propre logique.
+]
+
+.alert.hcenter[
+**Leçon apprise :** Ce qui est évident aujourd'hui ne l'est plus du tout deux semaines après. Commenter à chaud est un gain de temps, pas une perte.
+]
+
+---
+
+# VI.2 - Planification : Cartographier la charge de travail
+
+.block[
+### Une vision initiale trop optimiste
+- **Manque de visibilité** : On a foncé tête baissée dans le code sans prendre assez de temps en amont pour lister exhaustivement toutes les tâches et évaluer leur volume réel.
+- **Conséquence directe** : Du retard accumulé rapidement, car la complexité de certaines briques techniques a été sous-estimée.
+]
+
+.block[
+### Ce qu'on aurait dû faire
+- Poser les bases plus sérieusement lors de la première semaine : découpage précis des tâches, priorisation et jalons réalistes.
+]
+
+---
+
+# VI.3 - Architecture & Git : L'enfer des merges
+
+.block[
+### Quand l'imprécision technique plombe l'organisation
+- **Des structures instables** : Des choix de conception encore flous nous ont poussés à modifier les structures de données principales à plusieurs reprises, chacun de notre côté.
+- **Le cauchemar Git** : Travailler sur des branches séparées avec des structures mouvantes a rendu les `git merge` extrêmement laborieux et sources de conflits permanents.
+]
+
+.alert.hcenter[
+**Leçon apprise :** Figer les interfaces et les structures de données en équipe *avant* de coder en parallèle sur des branches distinctes.
+]
+
+---
+
+# VI.4 - Rédaction : Éviter le rush de fin de projet
+
+.block[
+### Le syndrome du sprint final
+- **Le constat** : On a concentré 100% de nos efforts sur le code, en repoussant la création de la présentation au tout dernier moment.
+- **La difficulté** : Résumer et structurer plusieurs semaines de travail dans l'urgence de la dernière semaine génère un stress évitable.
+]
+
+.block[
+### La bonne pratique pour la suite
+- Produire le diaporama **au fil de l'eau** : noter les difficultés surmontées et intégrer les schémas d'architecture dès qu'une partie est validée.
+]
+
     </textarea>
 
     <script src="core/javascript/remark.js"></script>
