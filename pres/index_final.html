@@ -1361,7 +1361,7 @@ arma::mat Basis::basisFunc(int m , int n , int n_z , arma::vec z, arma::vec r) {
 
 2. Linéarisation et propriétés physiques de `$\rho$`
 
-3. Mémoïsation et compromis Temps / Mémoire (`rho_memory_max`)
+3. Mémorïsation et compromis Temps / Mémoire (`rho_memory_max`)
 
 4. Vectorisation algébrique et BLAS (`rho_fabulous`)
 ]
@@ -1528,14 +1528,14 @@ for (int i = 0; i < totalStates; ++i) {
 
 ---
 
-# IV.3.1 - Mémoïsation et Partitionnement (`rho_memory_max`)
+# IV.3.1 - Mémorïsation et Partitionnement (`rho_memory_max`)
 
 Pour éliminer **100 % des recalculs** de fonctions de base et **100 % des tests inutiles** sur `$m$` :
 
 .row[
 .column.w45[
 .block[
-### 1. Mémoïsation (`func`)
+### 1. Mémorïsation (`func`)
 On précalcule `basisFunc` une unique fois pour chaque état `$i$`, et on stocke les matrices dans `std::vector<arma::mat> func`.
 * **Coût d'accès** : `$O(1)$` en lecture.
 ]
@@ -1725,7 +1725,7 @@ En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Arma
 
 ---
 
-# V.1.1 - Qu'est-ce qu'un wrapper Python ?
+# V.1 - Qu'est-ce qu'un wrapper Python ?
 
 .block[ ### Le pont entre deux mondes Un **wrapper** (ou « enveloppe
 ») est une interface logicielle qui permet à un langage de haut niveau
@@ -1749,7 +1749,7 @@ pilote en Python, on calcule à la vitesse du C++.]
 
 ---
 
-# V.1.2 - Comment ça fonctionne sous le capot ?
+# V.2 - Comment ça fonctionne sous le capot ?
 
 .block[ ### L'API C de Python (`Python.h`) L'interpréteur Python est
 lui-même écrit en C et fournit une API standard pour lier des
@@ -1766,7 +1766,7 @@ bibliothèques dynamiques (`.so` / `.pyd`).]
 
 ---
 
-# V.1.3 - Exemple : conversion des données (NumPy ⇄ Armadillo)
+# V.3 - Exemple : conversion des données (NumPy ⇄ Armadillo)
 
 .block[ ### Récupération d'un vecteur NumPy en C++ Cette fonction
 utilitaire extrait le pointeur brut d'un tableau `numpy.ndarray` 1D pour
@@ -1794,7 +1794,7 @@ bool pyarray_to_armavec(PyObject* obj, arma::vec& out_vec) {
 
 ---
 
-# V.1.4 - Exemple : déclaration du module Python
+# V.4 - Exemple : déclaration du module Python
 
 .block[ ### Enregistrement des fonctions et point d'entrée La table
 `PyMethodDef` associe les noms accessibles depuis Python aux fonctions
@@ -1870,77 +1870,9 @@ Pour voir où il passait le temps, le problème était que l'on ne voyait que de
             58,606      armv8_pmuv3_1/branch-misses/u                                           ( +- 15.20% )  (17.29%)
 ```
 
----
-
-# II. Retex & Gestion de projet : Leçons apprises
-
-.hcenter.vcenter.large[
-1. Documentation : Le piège de l'évidence à chaud
-2. Planification : La sous-estimation de la charge
-3. Architecture & Git : L'enfer des conflits de merge
-4. Soutenance : Le piège du sprint final
-]
 
 ---
-
-# VI.1 - Documentation : Le piège de l'évidence à chaud
-
-.block[
-### Le constat
-- **Le piège du "c'est évident"** : Sur le moment, la logique de notre code nous paraissait tellement limpide qu'on n'a pas pris le temps de la commenter ni de documenter nos choix.
-- **Le réveil difficile** : Dix jours plus tard, face à notre propre code, c'était le néant total. On a perdu un temps précieux à ré-analyser notre propre logique.
-]
-
-.alert.hcenter[
-**Leçon apprise :** Ce qui est évident aujourd'hui ne l'est plus du tout deux semaines après. Commenter à chaud est un gain de temps, pas une perte.
-]
-
----
-
-# VI.2 - Planification : Cartographier la charge de travail
-
-.block[
-### Une vision initiale trop optimiste
-- **Manque de visibilité** : On a foncé tête baissée dans le code sans prendre assez de temps en amont pour lister exhaustivement toutes les tâches et évaluer leur volume réel.
-- **Conséquence directe** : Du retard accumulé rapidement, car la complexité de certaines briques techniques a été sous-estimée.
-]
-
-.block[
-### Ce qu'on aurait dû faire
-- Poser les bases plus sérieusement lors de la première semaine : découpage précis des tâches, priorisation et jalons réalistes.
-]
-
----
-
-# VI.3 - Architecture & Git : L'enfer des merges
-
-.block[
-### Quand l'imprécision technique plombe l'organisation
-- **Des structures instables** : Des choix de conception encore flous nous ont poussés à modifier les structures de données principales à plusieurs reprises, chacun de notre côté.
-- **Le cauchemar Git** : Travailler sur des branches séparées avec des structures mouvantes a rendu les `git merge` extrêmement laborieux et sources de conflits permanents.
-]
-
-.alert.hcenter[
-**Leçon apprise :** Figer les interfaces et les structures de données en équipe *avant* de coder en parallèle sur des branches distinctes.
-]
-
----
-
-# VI.4 - Rédaction : Éviter le rush de fin de projet
-
-.block[
-### Le syndrome du sprint final
-- **Le constat** : On a concentré 100% de nos efforts sur le code, en repoussant la création de la présentation au tout dernier moment.
-- **La difficulté** : Résumer et structurer plusieurs semaines de travail dans l'urgence de la dernière semaine génère un stress évitable.
-]
-
-.block[
-### La bonne pratique pour la suite
-- Produire le diaporama **au fil de l'eau** : noter les difficultés surmontées et intégrer les schémas d'architecture dès qu'une partie est validée.
-]
-
----
-# V.3 - Résultats Visuels : Les Coupes 2D
+# VI.3 - Résultats Visuels : Les Coupes 2D
 
 .block[
 ### Comparaison des profils de densité
@@ -1965,7 +1897,7 @@ Voici les coupes transversales physiques obtenues via le wrapper C++ et tracées
 
 ---
 
-# V.3 - Résultats Visuels : Mémoïsation & BLAS
+# VI.3 - Résultats Visuels : Mémorïsation & BLAS
 
 .block[
 ### Des performances accrus sans perte de précision
@@ -1983,13 +1915,13 @@ Voici les coupes transversales physiques obtenues via le wrapper C++ et tracées
 
 .column.w45[
 .hcenter[![](images/density_fabulous_2D.png)]
-.hcenter.small[`rho_fabulous` (> 600x plus rapide)]
+.hcenter.small[`rho_fabulous` (> [Y]x plus rapide)]
 ]
 ]
 
 ---
 
-# V.3 - Validation Numérique : Écarts vs Naïf
+# VI.3 - Validation Numérique : Écarts vs Naïf
 
 .block[
 ### Cartes de différence ($\Delta\rho$)
@@ -2012,6 +1944,74 @@ Vérification que les optimisations ne modifient pas la physique ($\Delta\rho = 
 Erreurs limitées aux bruits d'arrondis machine ($\approx 10^{-15}$).
 ]
 
+---
+
+# VII. Retex & Gestion de projet : Leçons apprises
+
+.hcenter.vcenter.large[
+1. Documentation : Le piège de l'évidence à chaud
+2. Planification : La sous-estimation de la charge
+3. Architecture & Git : L'enfer des conflits de mergememoïsation
+4. Soutenance : Le piège du sprint final
+]
+
+---
+
+# VII.1 - Documentation : Le piège de l'évidence à chaud
+
+.block[
+### Le constat
+- **Le piège du "c'est évident"** : Sur le moment, la logique de notre code nous paraissait tellement limpide qu'on n'a pas pris le temps de la commenter ni de documenter nos choix.
+- **Le réveil difficile** : Dix jours plus tard, face à notre propre code, c'était le néant total. On a perdu un temps précieux à ré-analyser notre propre logique.
+]
+
+.alert.hcenter[
+**Leçon apprise :** Ce qui est évident aujourd'hui ne l'est plus du tout deux semaines après. Commenter à chaud est un gain de temps, pas une perte.
+]
+
+---
+
+# VII.2 - Planification : Cartographier la charge de travail
+
+.block[
+### Une vision initiale trop optimiste
+- **Manque de visibilité** : On a foncé tête baissée dans le code sans prendre assez de temps en amont pour lister exhaustivement toutes les tâches et évaluer leur volume réel.
+- **Conséquence directe** : Du retard accumulé rapidement, car la complexité de certaines briques techniques a été sous-estimée.
+]
+
+.block[
+### Ce qu'on aurait dû faire
+- Poser les bases plus sérieusement lors de la première semaine : découpage précis des tâches, priorisation et jalons réalistes.
+]
+
+---
+
+# VII.3 - Architecture & Git : L'enfer des merges
+
+.block[
+### Quand l'imprécision technique plombe l'organisation
+- **Des structures instables** : Des choix de conception encore flous nous ont poussés à modifier les structures de données principales à plusieurs reprises, chacun de notre côté.
+- **Le cauchemar Git** : Travailler sur des branches séparées avec des structures mouvantes a rendu les `git merge` extrêmement laborieux et sources de conflits permanents.
+]
+
+.alert.hcenter[
+**Leçon apprise :** Figer les interfaces et les structures de données en équipe *avant* de coder en parallèle sur des branches distinctes.
+]
+
+---
+
+# VII.4 - Rédaction : Éviter le rush de fin de projet
+
+.block[
+### Le syndrome du sprint final
+- **Le constat** : On a concentré 100% de nos efforts sur le code, en repoussant la création de la présentation au tout dernier moment.
+- **La difficulté** : Résumer et structurer plusieurs semaines de travail dans l'urgence de la dernière semaine génère un stress évitable.
+]
+
+.block[
+### La bonne pratique pour la suite
+- Produire le diaporama **au fil de l'eau** : noter les difficultés surmontées et intégrer les schémas d'architecture dès qu'une partie est validée.
+]
 
     </textarea>
 
