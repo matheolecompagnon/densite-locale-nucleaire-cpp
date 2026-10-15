@@ -16,10 +16,18 @@
   background: rgba(192, 0, 136, 0.2);
 }
 
+/*
+MODIFIE
+*/
+
 .large {
   font-size: 1.4em; /* Augmente la taille de 40% */
   line-height: 1.8 ;
 }
+
+/*
+FIN DE MODIFICATION
+*/
 
 th, td {
   border: 0.15em solid rgba(0, 136, 192, 1.0);

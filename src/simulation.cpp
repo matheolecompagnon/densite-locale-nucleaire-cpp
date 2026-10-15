@@ -1,5 +1,6 @@
 #include "basis.hpp"
 #include "simulation.hpp"
+#include "bench.hpp"
 
 #include <cstdint> // Pour uint64_t
 #include <vector>
@@ -9,7 +10,8 @@
 #define N 14
 #define Q 1.3
 
-
+Bench bench_naif, bench_kronecker, bench_factorized, bench_linearized, bench_linearized_again, 
+bench_optimized_m, bench_symmetric, bench_symmetric_optimized, bench_memory_max, bench_fabulous;
 
 arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ){
 
@@ -23,8 +25,10 @@ arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nb
         return arma::zeros(nbR, nbZ);
     }
 
+    /*
     std::cout << "Dimensions de rho chargées : " << rho.n_rows << " x " << rho.n_cols << std::endl;
     std::cout << "mMax attendu : " << basis.mMax << std::endl;
+    */
 
     if (rho.n_rows < (unsigned int)basis.mMax || rho.n_cols < (unsigned int)basis.mMax) {
         std::cerr << "Erreur : La matrice rho est trop petite par rapport à mMax !" << std::endl;
@@ -32,7 +36,9 @@ arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nb
     }
 
     arma::mat result = arma::zeros(nbR, nbZ);
+
     int a = 0,b = 0;
+    BENCH_START(bench_naif);
     for (int m = 0; m < basis.mMax; m++)
     {
         for (int n = 0; n < basis.nMax(m); n++)
@@ -52,9 +58,11 @@ arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nb
                             arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
                             arma::mat funcB = basis.basisFunc(mp, np, n_zp, zVals, rVals);
 
+                            /*
                             if (funcA.has_nan() || funcB.has_nan()) {
                                 std::cout << "NaN détecté dans basisFunc pour m=" << m << ", n=" << n << ", n_z=" << n_z << std::endl;
                             }
+                            */
                             
                             
                                 result += funcA % funcB * rho(a, b);
@@ -139,6 +147,8 @@ arma::mat rho_azimutal(const arma::vec rVals, const arma::vec zVals, int nbR, in
         }
     }
 
+    BENCH_END(bench_naif);
+
     return result;
 }
 
@@ -154,8 +164,10 @@ arma::mat rho_kronecker(const arma::vec rVals, const arma::vec zVals, int nbR, i
         return arma::zeros(nbR, nbZ);
     }
 
+    /*
     std::cout << "Dimensions de rho chargées : " << rho.n_rows << " x " << rho.n_cols << std::endl;
     std::cout << "mMax attendu : " << basis.mMax << std::endl;
+    */
 
     if (rho.n_rows < (unsigned int)basis.mMax || rho.n_cols < (unsigned int)basis.mMax) {
         std::cerr << "Erreur : La matrice rho est trop petite par rapport à mMax !" << std::endl;
@@ -164,7 +176,11 @@ arma::mat rho_kronecker(const arma::vec rVals, const arma::vec zVals, int nbR, i
 
     arma::mat result = arma::zeros(nbR, nbZ);
     int a,b, offset;
+<<<<<<< HEAD
     offset = 0;
+=======
+    BENCH_START(bench_kronecker);
+>>>>>>> origin/matheo_lecompagnon
     for (int m = 0; m < basis.mMax; m++)
     {
 
@@ -194,9 +210,11 @@ arma::mat rho_kronecker(const arma::vec rVals, const arma::vec zVals, int nbR, i
                             arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
                             arma::mat funcB = basis.basisFunc(m, np, n_zp, zVals, rVals);
 
+                            /*
                             if (funcA.has_nan() || funcB.has_nan()) {
                                 std::cout << "NaN détecté dans basisFunc pour m=" << m << ", n=" << n << ", n_z=" << n_z << std::endl;
                             }
+                            */
                             
                             result += funcA % funcB * rho(a, b);
 
@@ -210,6 +228,8 @@ arma::mat rho_kronecker(const arma::vec rVals, const arma::vec zVals, int nbR, i
             }
         }
     }
+
+    BENCH_END(bench_kronecker);
 
     return result;
 }
@@ -226,8 +246,10 @@ arma::mat rho_factorized(const arma::vec rVals, const arma::vec zVals, int nbR, 
         return arma::zeros(nbR, nbZ);
     }
 
+    /*
     std::cout << "Dimensions de rho chargées : " << rho.n_rows << " x " << rho.n_cols << std::endl;
     std::cout << "mMax attendu : " << basis.mMax << std::endl;
+    */
 
     if (rho.n_rows < (unsigned int)basis.mMax || rho.n_cols < (unsigned int)basis.mMax) {
         std::cerr << "Erreur : La matrice rho est trop petite par rapport à mMax !" << std::endl;
@@ -236,6 +258,8 @@ arma::mat rho_factorized(const arma::vec rVals, const arma::vec zVals, int nbR, 
 
     arma::mat result = arma::zeros(nbR, nbZ);
     int a,b, offset;
+    BENCH_START(bench_factorized);
+
     for (int m = 0; m < basis.mMax; m++)
     {
 
@@ -267,9 +291,11 @@ arma::mat rho_factorized(const arma::vec rVals, const arma::vec zVals, int nbR, 
 
                             arma::mat funcB = basis.basisFunc(m, np, n_zp, zVals, rVals);
 
+                            /*
                             if (funcA.has_nan() || funcB.has_nan()) {
                                 std::cout << "NaN détecté dans basisFunc pour m=" << m << ", n=" << n << ", n_z=" << n_z << std::endl;
                             }
+                            */
                             
                             result += funcA % funcB * rho(a, b);
 
@@ -283,6 +309,8 @@ arma::mat rho_factorized(const arma::vec rVals, const arma::vec zVals, int nbR, 
             }
         }
     }
+
+    BENCH_END(bench_factorized);
 
     return result;
 }
@@ -307,6 +335,7 @@ arma::mat rho_linearized(const arma::vec rVals, const arma::vec zVals, int nbR, 
 
     // 1. Remplir le petit tableau des triplets quantiques (très léger en mémoire)
     std::vector<BasisState> states;
+
     for (int m = 0; m < basis.mMax; m++) {
         for (int n = 0; n < basis.nMax(m); n++) {
             for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
@@ -316,7 +345,9 @@ arma::mat rho_linearized(const arma::vec rVals, const arma::vec zVals, int nbR, 
     }
 
     int totalStates = states.size();
+    /*
     std::cout << "Nombre total d'états : " << totalStates << std::endl;
+    */
 
     if (rho.n_rows < (unsigned int)totalStates || rho.n_cols < (unsigned int)totalStates) {
         std::cerr << "Erreur : La matrice rho est trop petite !" << std::endl;
@@ -326,6 +357,9 @@ arma::mat rho_linearized(const arma::vec rVals, const arma::vec zVals, int nbR, 
     arma::mat result = arma::zeros(nbR, nbZ);
 
     // 2. Les deux boucles i et j
+
+    BENCH_START(bench_linearized);
+
     for (int i = 0; i < totalStates; ++i) {
         int m = states[i].m;
         int n = states[i].n;
@@ -354,6 +388,8 @@ arma::mat rho_linearized(const arma::vec rVals, const arma::vec zVals, int nbR, 
         }
     }
 
+    BENCH_END(bench_linearized);
+
     return result;
 }
 
@@ -379,7 +415,9 @@ arma::mat rho_linearized_again(const arma::vec rVals, const arma::vec zVals, int
     }
 
     int totalStates = states.size();
+    /*
     std::cout << "Nombre total d'états : " << totalStates << std::endl;
+    */
 
     if (rho.n_rows < (unsigned int)totalStates || rho.n_cols < (unsigned int)totalStates) {
         std::cerr << "Erreur : La matrice rho est trop petite !" << std::endl;
@@ -391,6 +429,8 @@ arma::mat rho_linearized_again(const arma::vec rVals, const arma::vec zVals, int
     // 2. Boucle linéarisée avec uint64_t et déclaration propre de i et j
     uint64_t totalIterations = (uint64_t)totalStates * (uint64_t)totalStates;
     
+    BENCH_START(bench_linearized_again);
+
     for (uint64_t a = 0; a < totalIterations; ++a) {
         int i = a / totalStates;
         int j = a % totalStates; 
@@ -416,6 +456,8 @@ arma::mat rho_linearized_again(const arma::vec rVals, const arma::vec zVals, int
             }
         }
     }
+
+    BENCH_END(bench_linearized_again);
 
     return result;
 }
@@ -444,7 +486,9 @@ arma::mat rho_optimized_m(const arma::vec rVals, const arma::vec zVals, int nbR,
     }
 
     int totalStates = states.size();
+    /*
     std::cout << "Nombre total d'états : " << totalStates << std::endl;
+    */
 
     if (rho.n_rows < (unsigned int)totalStates || rho.n_cols < (unsigned int)totalStates) {
         std::cerr << "Erreur : La matrice rho est trop petite !" << std::endl;
@@ -461,6 +505,9 @@ arma::mat rho_optimized_m(const arma::vec rVals, const arma::vec zVals, int nbR,
     arma::mat result = arma::zeros(nbR, nbZ);
 
     // 3. Boucle principale sur i
+
+    BENCH_START(bench_optimized_m);
+
     for (int i = 0; i < totalStates; ++i) {
         int m = states[i].m;
         int n = states[i].n;
@@ -484,6 +531,8 @@ arma::mat rho_optimized_m(const arma::vec rVals, const arma::vec zVals, int nbR,
             }
         }
     }
+    
+    BENCH_END(bench_optimized_m);
 
     return result;
 }
@@ -522,6 +571,8 @@ arma::mat rho_symmetric(const arma::vec rVals, const arma::vec zVals, int nbR, i
 
     arma::mat result = arma::zeros(nbR, nbZ);
 
+    BENCH_START(bench_symmetric);
+
     // 3. Boucle optimisée par blocs m et exploitant la symétrie i < j
     for (int m = 0; m < basis.mMax; ++m) {
         const auto& indices = indices_par_m[m];
@@ -552,6 +603,8 @@ arma::mat rho_symmetric(const arma::vec rVals, const arma::vec zVals, int nbR, i
             }
         }
     }
+
+    BENCH_END(bench_symmetric);
 
     return result;
 }
@@ -591,6 +644,8 @@ arma::mat rho_symmetric_optimized(const arma::vec rVals, const arma::vec zVals, 
     // Variable temporaire pour éviter de réallouer des matrices de taille nbR x nbZ à chaque tour
     arma::mat term; 
 
+    BENCH_START(bench_symmetric_optimized);
+
     for (int m = 0; m < basis.mMax; ++m) {
         const auto& indices = indices_par_m[m];
         int size = indices.size();
@@ -621,10 +676,10 @@ arma::mat rho_symmetric_optimized(const arma::vec rVals, const arma::vec zVals, 
         }
     }
 
+    BENCH_END(bench_symmetric_optimized);
+
     return result;
 }
-
-
 
 
 arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ){
@@ -664,6 +719,8 @@ arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, 
 
     arma::mat result = arma::zeros(nbR, nbZ);
 
+    BENCH_START(bench_memory_max);
+
     for (int m = 0; m < basis.mMax; ++m) {
         const auto& indices = indices_par_m[m];
         int size = indices.size();
@@ -686,6 +743,8 @@ arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, 
             }
         }
     }
+
+    BENCH_END(bench_memory_max);
 
     return result;
 }
@@ -735,32 +794,37 @@ arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, in
 
     arma::mat result = arma::zeros(nbR, nbZ);
 
-for (int m = 0; m < basis.mMax; m++) {
-    const auto& indices = indices_par_m[m];
-    int K_m = indices.size();
-    if (K_m == 0) continue;
+    BENCH_START(bench_fabulous);
 
-    // On revient à l'allocation locale directe (qui était plus rapide en -O2)
-    arma::mat F_m(nbR * nbZ, K_m);
-    for (int k = 0; k < K_m; ++k) {
-        int idx = indices[k];
-        const auto& state = states[idx];
-        F_m.col(k) = arma::vectorise(basis.basisFunc(state.m, state.n, state.n_z, zVals, rVals));
+    for (int m = 0; m < basis.mMax; m++) {
+        const auto& indices = indices_par_m[m];
+        int K_m = indices.size();
+        if (K_m == 0) continue;
+
+        // On revient à l'allocation locale directe (qui était plus rapide en -O2)
+        arma::mat F_m(nbR * nbZ, K_m);
+        for (int k = 0; k < K_m; ++k) {
+            int idx = indices[k];
+            const auto& state = states[idx];
+            F_m.col(k) = arma::vectorise(basis.basisFunc(state.m, state.n, state.n_z, zVals, rVals));
+        }
+
+        // 1. Extraire le sous-bloc rho_m
+        arma::uvec idx_vec = arma::conv_to<arma::uvec>::from(indices);
+        arma::mat rho_m = rho.submat(idx_vec, idx_vec);
+
+        // 2. PRODUIT INTERMÉDIAIRE (Taille : (nbR*nbZ) x K_m)
+        arma::mat A = F_m * rho_m;
+
+        // 3. EXTRACTION DIRECTE DE LA DIAGONALE (Zéro matrice S x S en mémoire !)
+        // Le symbole % fait un produit élément par élément (Hadamard), et arma::sum somme sur les colonnes
+        arma::vec diag_R_m = arma::sum(A % F_m, 1);
+
+        // 4. Redimensionner le vecteur diagonale en grille 2D et accumuler
+        result += arma::reshape(diag_R_m, nbR, nbZ);
     }
+   
+    BENCH_END(bench_fabulous);
 
-    // 1. Extraire le sous-bloc rho_m
-    arma::uvec idx_vec = arma::conv_to<arma::uvec>::from(indices);
-    arma::mat rho_m = rho.submat(idx_vec, idx_vec);
-
-    // 2. PRODUIT INTERMÉDIAIRE (Taille : (nbR*nbZ) x K_m)
-    arma::mat A = F_m * rho_m;
-
-    // 3. EXTRACTION DIRECTE DE LA DIAGONALE (Zéro matrice S x S en mémoire !)
-    // Le symbole % fait un produit élément par élément (Hadamard), et arma::sum somme sur les colonnes
-    arma::vec diag_R_m = arma::sum(A % F_m, 1);
-
-    // 4. Redimensionner le vecteur diagonale en grille 2D et accumuler
-    result += arma::reshape(diag_R_m, nbR, nbZ);
-}
     return result;
 }

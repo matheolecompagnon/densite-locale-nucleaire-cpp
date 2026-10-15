@@ -1,0 +1,26 @@
+g++ -Wall -Wextra -Werror -Iinclude -O0 -DBENCH src/main.cpp bin/basis.o bin/poly.o bin/simulation.o bin/bench.o -o exec -larmadillo
+
+
+========== Debut Affichage Programme ==========
+
+============== BENCHMARK ===============
+Nombre de préchauffes : 10 itérations
+Nombre de mesures : 100 itérations
+| Algorithme    | temps (s/res.) |
+|:--------------|:---------------|
+| Naïf          |    2.643643    |
+| Kroenecker    |    0.668905    |
+| Factorized    |    0.539542    |
+| Linearized    |    0.538897    |
+| Linearized 2. |    0.669147    |
+| Optimized     |    0.539421    |
+| Symmetric     |    0.343141    |
+| Sym. Opti.    |    0.342538    |
+| Memory max    |    0.271028    |
+| Fabulous      |    0.038582    |
+============ FIN BENCHMARK =============
+Temps d'execution : 738.857425 s
+
+
+========== Fin Affichage Programme ==========
+
