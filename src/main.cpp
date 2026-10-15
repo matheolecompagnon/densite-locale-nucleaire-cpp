@@ -30,8 +30,8 @@ int main() {
         arma::arma_rng::set_seed(3);
 
         // Initialisation des positions pour 50*50 positions différentes : 2500
-        int nbR = 50; 
-        int nbZ = 50;
+        int nbR = 5; 
+        int nbZ = 5;
         arma::vec rVals = arma::linspace<arma::vec>(0.1, 10.0, nbR);
         arma::vec zVals = arma::linspace<arma::vec>(-5.0, 5.0, nbZ);
 
@@ -168,7 +168,7 @@ int main() {
 
         // 2. Benchmark de rho_memory_max
         timer.tic();
-        arma::mat rho_optimized = rho_fabulous(rVals, zVals, nbR, nbZ);
+        arma::mat rho_optimized = rho_ultimate(rVals, zVals, nbR, nbZ);
         double time_opt = timer.toc();
         std::cout << "[2/2] rho_memory_max exécuté en : " << time_opt << " secondes." << std::endl;
 

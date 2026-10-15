@@ -10,10 +10,9 @@
  * @date 2026-09-09
  * @copyright Copyright (c) 2026
  */
-
-#include <armadillo>
 #include <iostream>
 #include <iomanip>
+#include <armadillo>
 
 class Bench {
     public:
