@@ -99,17 +99,17 @@ arma::mat rho_kronecker(const arma::vec rVals, const arma::vec zVals, int nbR, i
 
     arma::mat result = arma::zeros(nbR, nbZ);
     int a,b, offset;
+    offset = 0;
     for (int m = 0; m < basis.mMax; m++)
     {
 
-        offset = 0;
-        for (int m_prim = 0; m_prim < m; ++m_prim) {
-            int n_primMax = basis.nMax(m_prim);
-            for (int n_prim = 0; n_prim < n_primMax; ++n_prim) {
+        
+        if(0 < m) int n_primMax = basis.nMax(m-1);
+        for (int n_prim = 0; n_prim < n_primMax; ++n_prim) {
                 // On somme les n_zMax pour chaque n (et non une multiplication)
                 offset += basis.n_zMax(m_prim, n_prim); 
-            }
         }
+        
 
         a = offset;
 

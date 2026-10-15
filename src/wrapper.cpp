@@ -4,7 +4,7 @@
  *
  * Python :
  *     import ipsdev
- *     vals = ipsdev.phi(m, n, n_z, [(r0, z0), (r1, z1), ...], br=1.0, bz=1.0)
+ *     vals = ipsdev.phi(m, n, n_z, [(r0), (r1), ...], [(r0), (r1), ...])
  *     # -> [phi(r0, z0), phi(r1, z1), ...]   une valeur par point
  *
  * phi_{m,n,n_z}(r, z) = Z(z, n_z) * R(r, m, n)
@@ -16,136 +16,105 @@
  *                                             diapo, même si l'en-tête l'appelle n_z)
  */
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>   // toujours en premier, avant les autres headers
-
+#include <Python.h>
 #include <armadillo>
-#include <exception>
-#include <stdexcept>
-#include <vector>
 
-#include "basis.hpp"
-#include "trucation.cpp"
+// Déclarations des fonctions existantes (provenant de simulation.cpp)
+arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
 
-
-
-/* ======================================================================
- *  1. Code C++ « pur » : aucune dépendance à Python
- * ====================================================================== */
-
-struct PointRZ { double r, z; };
-
-// phi en tous les points : un vecteur de points en entrée, un vecteur de valeurs en sortie.
-static std::vector<double> phi(int m, int n, int nz, double br, double bz,
-                               const std::vector<PointRZ>& pts) {
-    if (n < 0 || nz < 0) throw std::invalid_argument("n et n_z doivent être >= 0");
-    if (br <= 0.0 || bz <= 0.0) throw std::invalid_argument("br et bz doivent être > 0");
-    if (pts.empty()) return {};
-
-    // On sépare les coordonnées : rPart et zPart travaillent sur des vecteurs.
-    arma::vec r(pts.size()), z(pts.size());
-    for (std::size_t i = 0; i < pts.size(); ++i) {
-        r(i) = pts[i].r;
-        z(i) = pts[i].z;
+// Fonction utilitaire pour convertir un tableau NumPy 1D en arma::vec
+bool pyarray_to_armavec(PyObject* obj, arma::vec& out_vec) {
+    PyArrayObject* array = (PyArrayObject*)PyArray_FROM_OTF(obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
+    if (!array) {
+        PyErr_SetString(PyExc_TypeError, "Le tableau doit être un numpy.ndarray de type float64 (1D).");
+        return false;
     }
 
-    // N et Q ne servent qu'à la troncature de la base : inutiles pour calculer phi.
-    Basis basis(br, bz, 0, 1.0);
-
-    arma::vec R = basis.rPart(r, m, n);   // R(r_i, m, n)
-    arma::vec Z = basis.zPart(z, nz);     // Z(z_i, n_z)
-
-    std::vector<double> out(pts.size());
-    for (std::size_t i = 0; i < pts.size(); ++i)
-        out[i] = Z(i) * R(i);             // produit terme à terme : phi(r_i, z_i)
-    return out;
-}
-
-
-
-/* ======================================================================
- *  2. Le wrapper (couche de traduction Python <-> C++)
- * ====================================================================== */
-
-// Séquence Python de couples (r, z) -> std::vector<PointRZ>
-static bool parse_points(PyObject* obj, std::vector<PointRZ>& out) {
-    PyObject* seq = PySequence_Fast(obj, "les points doivent former une séquence de couples (r, z)");
-    if (!seq) return false;                                      // nouvelle référence
-
-    Py_ssize_t n = PySequence_Fast_GET_SIZE(seq);
-    out.reserve(static_cast<std::size_t>(n));
-
-    for (Py_ssize_t i = 0; i < n; ++i) {
-        PyObject* item = PySequence_Fast_GET_ITEM(seq, i);       // référence empruntée
-
-        PyObject* couple = PySequence_Fast(item, "chaque point doit être un couple (r, z)");
-        if (!couple) { Py_DECREF(seq); return false; }
-        if (PySequence_Fast_GET_SIZE(couple) != 2) {
-            PyErr_SetString(PyExc_ValueError, "chaque point doit avoir exactement 2 coordonnées (r, z)");
-            Py_DECREF(couple); Py_DECREF(seq);
-            return false;
-        }
-
-        double r = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(couple, 0));
-        double z = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(couple, 1));
-        Py_DECREF(couple);
-        if ((r == -1.0 || z == -1.0) && PyErr_Occurred()) { Py_DECREF(seq); return false; }
-
-        out.push_back({r, z});
+    if (PyArray_NDIM(array) != 1) {
+        PyErr_SetString(PyExc_ValueError, "Le tableau doit être de dimension 1.");
+        Py_DECREF(array);
+        return false;
     }
-    Py_DECREF(seq);
+
+    npy_intp* dims = PyArray_DIMS(array);
+    double* data = (double*)PyArray_DATA(array);
+
+    out_vec = arma::vec(data, dims[0], /*copy_aux_mem=*/true);
+    Py_DECREF(array);
     return true;
 }
 
-// phi(m, n, n_z, points, br=1.0, bz=1.0) -> list[float]
-static PyObject* py_phi(PyObject* /*self*/, PyObject* args) {
-    int m, n, nz;
-    PyObject* points_obj;
-    double br = 1.0, bz = 1.0;                    // valeurs par défaut des arguments optionnels
-
-    // "iiiO|dd" : 3 entiers, 1 objet, puis (après '|') 2 doubles optionnels
-    if (!PyArg_ParseTuple(args, "iiiO|dd", &m, &n, &nz, &points_obj, &br, &bz))
-        return nullptr;
-
-    std::vector<PointRZ> pts;
-    if (!parse_points(points_obj, pts)) return nullptr;
-
-    std::vector<double> vals;
-    try {
-        vals = phi(m, n, nz, br, bz, pts);
-    } catch (const std::invalid_argument& e) {
-        PyErr_SetString(PyExc_ValueError, e.what());
-        return nullptr;
-    } catch (const std::exception& e) {           // y compris les erreurs d'Armadillo
-        PyErr_SetString(PyExc_RuntimeError, e.what());
-        return nullptr;
-    } catch (...) {
-        PyErr_SetString(PyExc_RuntimeError, "erreur C++ inconnue");
+// Fonction utilitaire pour convertir un arma::mat en numpy.ndarray 2D
+PyObject* armamat_to_pyarray(const arma::mat& mat) {
+    npy_intp dims[2] = { (npy_intp)mat.n_rows, (npy_intp)mat.n_cols };
+    // Création d'un tableau numpy vide
+    PyObject* py_array = PyArray_SimpleNew(2, dims, NPY_DOUBLE);
+    if (!py_array) {
         return nullptr;
     }
 
-    // std::vector<double> -> liste Python
-    PyObject* out = PyList_New(static_cast<Py_ssize_t>(vals.size()));
-    if (!out) return nullptr;
-    for (std::size_t i = 0; i < vals.size(); ++i) {
-        PyObject* v = PyFloat_FromDouble(vals[i]);
-        if (!v) { Py_DECREF(out); return nullptr; }
-        PyList_SET_ITEM(out, static_cast<Py_ssize_t>(i), v);     // vole la référence
-    }
-    return out;
+    double* dest_data = (double*)PyArray_DATA((PyArrayObject*)py_array);
+    // Copie des données d'Armadillo vers NumPy
+    std::memcpy(dest_data, mat.memptr(), mat.n_elem * sizeof(double));
+
+    return py_array;
 }
 
-static PyMethodDef Methods[] = {
-    {"phi", py_phi, METH_VARARGS,
-     "phi(m, n, n_z, points, br=1.0, bz=1.0) -> list\n"
-     "Valeur de phi_{m,n,n_z} (sans la phase e^{i m theta}) en chaque point (r, z)."},
+// --- Wrapper pour rho_naif ---
+static PyObject* wrap_rho_naif(PyObject* self, PyObject* args) {
+    PyObject *py_rVals, *py_zVals;
+    int nbR, nbZ;
+
+    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) {
+        return nullptr;
+    }
+
+    arma::vec rVals, zVals;
+    if (!pyarray_to_armavec(py_rVals, rVals)) return nullptr;
+    if (!pyarray_to_armavec(py_zVals, zVals)) return nullptr;
+
+    arma::mat res = rho_naif(rVals, zVals, nbR, nbZ);
+
+    return armamat_to_pyarray(res);
+}
+
+// --- Wrapper pour rho_fabulous ---
+static PyObject* wrap_rho_fabulous(PyObject* self, PyObject* args) {
+    PyObject *py_rVals, *py_zVals;
+    int nbR, nbZ;
+
+    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) {
+        return nullptr;
+    }
+
+    arma::vec rVals, zVals;
+    if (!pyarray_to_armavec(py_rVals, rVals)) return nullptr;
+    if (!pyarray_to_armavec(py_zVals, zVals)) return nullptr;
+
+    arma::mat res = rho_fabulous(rVals, zVals, nbR, nbZ);
+
+    return armamat_to_pyarray(res);
+}
+
+// Table des méthodes du module
+static PyMethodDef SimulationMethods[] = {
+    {"rho_naif", wrap_rho_naif, METH_VARARGS, "Calcul rho_naif"},
+    {"rho_fabulous", wrap_rho_fabulous, METH_VARARGS, "Calcul rho_fabulous"},
     {nullptr, nullptr, 0, nullptr}
 };
 
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT, "ipsdev", "Wrapper Python du projet IPS-DEV",
-    -1, Methods, nullptr, nullptr, nullptr, nullptr
+// Structure du module
+static struct PyModuleDef simulationmodule = {
+    PyModuleDef_HEAD_INIT,
+    "simulation_cpp",
+    "Module C++ pour les calculs de rho avec Armadillo",
+    -1,
+    SimulationMethods
 };
 
-PyMODINIT_FUNC PyInit_ipsdev(void) {
-    return PyModule_Create(&moduledef);
+// Initialisation du module
+PyMODINIT_FUNC PyInit_simulation_cpp(void) {
+    import_array(); // Indispensable pour initialiser NumPy C-API
+    return PyModule_Create(&simulationmodule);
 }
