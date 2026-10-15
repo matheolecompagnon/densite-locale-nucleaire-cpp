@@ -25,6 +25,7 @@ Basis::Basis(double _br, double _bz, int _N, double _Q) : br(_br), bz(_bz), N(_N
         mMax++;
         nu -= Q; // Correction de l'affectation
     }
+    mMax--; // Ajustement final pour obtenir la valeur correcte de mMax
 
     // 2. Initialisation du vecteur nMax
     nMax.set_size(mMax);

@@ -95,7 +95,7 @@ void Poly::calcLaguerre(int m_, int n_, const arma::vec& vect)
 
 arma::vec Poly::laguerre(int m_, int n_)
 {
-    return coefficients.col(m_ * n + n_);
+    return coefficients.col(m * n_ + m_);
 }
 arma::vec Poly::hermite(int n_)
 {
