@@ -1567,6 +1567,53 @@ for (int i = 0; i < totalStates; i++) {
 2. Résultats et benchmarks
 ## 3. Outils de profilage
 
+---
+
+valgrind :
+
+```sh
+make
+valgrind
+```
+
+```valgrind
+==161699== HEAP SUMMARY:
+==161699==     in use at exit: 0 bytes in 0 blocks
+==161699==   total heap usage: 29,934,518 allocs, 29,934,518 frees, 52,791,166,540 bytes allocated
+==161699==
+==161699== All heap blocks were freed -- no leaks are possible
+==161699==
+==161699== For lists of detected and suppressed errors, rerun with: -s
+==161699== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
+perf :
+
+```
+make exec OPTIONS="-Wall -Wextra -Werror -Iinclude -O2 -g -fno-omit-frame-pointer -DBENCH"
+# Temps, IPC, cache-misses (3 répétitions)
+perf stat -r 3 -e cycles,instructions,cache-references,cache-misses,branch-misses ./exec
+
+# Où passe le temps
+perf record -F 999 --call-graph dwarf ./exec
+perf report --no-children
+```
+
+Pour voir où il passait le temps, le problème était que l'on ne voyait que des adresses
+
+```
+    14,539,564,037      armv8_pmuv3_0/cycles/u                                                  ( +-  0.15% )
+     1,020,732,189      armv8_pmuv3_1/cycles/u                                                  ( +- 17.32% )  (17.29%)
+    76,090,760,718      armv8_pmuv3_0/instructions/u     #    5.23  insn per cycle              ( +-  0.00% )
+       391,055,998      armv8_pmuv3_1/instructions/u     #    0.38  insn per cycle              ( +- 16.79% )  (17.29%)
+    25,874,426,152      armv8_pmuv3_0/cache-references/u                                        ( +-  0.06% )
+       104,312,410      armv8_pmuv3_1/cache-references/u                                        ( +- 16.36% )  (17.29%)
+       134,361,361      armv8_pmuv3_0/cache-misses/u     #    0.52% of all cache refs           ( +-  3.09% )
+         1,541,754      armv8_pmuv3_1/cache-misses/u     #    1.48% of all cache refs           ( +- 15.62% )  (17.29%)
+        31,914,939      armv8_pmuv3_0/branch-misses/u                                           ( +-  0.09% )
+            58,606      armv8_pmuv3_1/branch-misses/u                                           ( +- 15.20% )  (17.29%)
+```
+
     </textarea>
 
     <script src="core/javascript/remark.js"></script>
