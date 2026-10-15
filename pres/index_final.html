@@ -1725,25 +1725,104 @@ En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Arma
 
 ---
 
-# Résultats
+# V.1.1 - Qu'est-ce qu'un wrapper Python ?
 
-## 1. Wrapper python
+.block[ ### Le pont entre deux mondes Un **wrapper** (ou « enveloppe
+») est une interface logicielle qui permet à un langage de haut niveau
+(Python) d'exécuter du code écrit dans un langage bas niveau (C ou
+C++).]
+
+.row[ .column.w45[ ### Python : le pilote - Très souple, haut niveau
+et intuitif. - Idéal pour le prototypage, l'analyse de données et la
+visualisation (Matplotlib). - **Point faible** : lent pour les boucles
+intensives.]
+
+.column.w10[  ]
+
+.column.w45[ ### C++ : le moteur de calcul - Compilé, proche du
+matériel. - Permet d'exploiter la vectorisation (SIMD) et les
+bibliothèques hautement optimisées (BLAS/Armadillo). - **Point faible**
+: moins interactif pour tracer des graphes.] ]
+
+.alert.hcenter[ **Le wrapper unit le meilleur des deux mondes :** on
+pilote en Python, on calcule à la vitesse du C++.]
 
 ---
 
-# Résultats 
+# V.1.2 - Comment ça fonctionne sous le capot ?
 
-1. Wrapper python
-## 2. Résultats et benchmarks
+.block[ ### L'API C de Python (`Python.h`) L'interpréteur Python est
+lui-même écrit en C et fournit une API standard pour lier des
+bibliothèques dynamiques (`.so` / `.pyd`).]
+
+1.  **La signature universelle (`PyObject*`)** :
+
+    Toute fonction enveloppée prend et retourne des pointeurs
+    `PyObject*` représentant les objets Python :
+
+    ``` cpp
+    PyObject* ma_fonction_wrap(PyObject* self, PyObject* args);
+    ```
 
 ---
 
-# Résultats 
+# V.1.3 - Exemple : conversion des données (NumPy ⇄ Armadillo)
 
-1. Wrapper python
-2. Résultats et benchmarks
-## 3. Outils de profilage
+.block[ ### Récupération d'un vecteur NumPy en C++ Cette fonction
+utilitaire extrait le pointeur brut d'un tableau `numpy.ndarray` 1D pour
+l'injecter dans un vecteur `arma::vec`.]
 
+``` cpp
+bool pyarray_to_armavec(PyObject* obj, arma::vec& out_vec) {
+    PyArrayObject* array = (PyArrayObject*)PyArray_FROM_OTF(
+        obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY
+    );
+    if (!array) {
+        PyErr_SetString(PyExc_TypeError, "Doit être un numpy.ndarray 1D.");
+        return false;
+    }
+
+    double* data = (double*)PyArray_DATA(array);
+    npy_intp* dims = PyArray_DIMS(array);
+
+    // Initialisation du vecteur Armadillo avec les données partagées
+    out_vec = arma::vec(data, dims[0], /*copy_aux_mem=*/true);
+    Py_DECREF(array);
+    return true;
+}
+```
+
+---
+
+# V.1.4 - Exemple : déclaration du module Python
+
+.block[ ### Enregistrement des fonctions et point d'entrée La table
+`PyMethodDef` associe les noms accessibles depuis Python aux fonctions
+C++ enveloppées. `PyInit_simulation_cpp` initialise ensuite le module
+lors de l'import.]
+
+``` cpp
+// Table de correspondance associant les noms Python aux fonctions C++
+static PyMethodDef SimulationMethods[] = {
+    {"rho_naif", wrap_rho_naif, METH_VARARGS, "Calcul de la densité (naïf)"},
+    {"rho_fabulous", wrap_rho_fabulous, METH_VARARGS, "Calcul de la densité (fabulous)"},
+    {nullptr, nullptr, 0, nullptr}
+};
+
+// Définition du module
+static struct PyModuleDef simulationmodule = {
+    PyModuleDef_HEAD_INIT,
+    "simulation_cpp",
+    "Module C++ de simulation nucléaire",
+    -1, SimulationMethods
+};
+
+// Point d'entrée appelé lors du 'import simulation_cpp' en Python
+PyMODINIT_FUNC PyInit_simulation_cpp(void) {
+    import_array(); // Initialisation obligatoire de l'API C de NumPy
+    return PyModule_Create(&simulationmodule);
+}
+```
     </textarea>
 
     <script src="core/javascript/remark.js"></script>

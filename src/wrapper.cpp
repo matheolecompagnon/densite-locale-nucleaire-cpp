@@ -1,26 +1,16 @@
 /**
  * @file wrapper.cpp
- * @brief Module Python « ipsdev » (Python.h) : expose la fonction phi du projet IPS-DEV.
- *
- * Python :
- *     import ipsdev
- *     vals = ipsdev.phi(m, n, n_z, [(r0), (r1), ...], [(r0), (r1), ...])
- *     # -> [phi(r0, z0), phi(r1, z1), ...]   une valeur par point
- *
- * phi_{m,n,n_z}(r, z) = Z(z, n_z) * R(r, m, n)
- * (la phase e^{i m theta} est omise : on ne garde que la partie indépendante de theta, réelle)
- *
- * Le calcul est fait par la classe Basis :
- *   - Basis::zPart(z, n_z)  -> Z(z, n_z)
- *   - Basis::rPart(r, m, n) -> R(r, m, n)   (attention : le 3e paramètre de rPart est le n de la
- *                                             diapo, même si l'en-tête l'appelle n_z)
+ * @brief Module Python « simulation_cpp » : expose 4 fonctions rho du projet.
  */
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <numpy/arrayobject.h>
 #include <armadillo>
 
-// Déclarations des fonctions existantes (provenant de simulation.cpp)
+// Déclarations des 4 fonctions de simulation existantes
 arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+arma::mat rho_linearized(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
 arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
 
 // Fonction utilitaire pour convertir un tableau NumPy 1D en arma::vec
@@ -48,58 +38,70 @@ bool pyarray_to_armavec(PyObject* obj, arma::vec& out_vec) {
 // Fonction utilitaire pour convertir un arma::mat en numpy.ndarray 2D
 PyObject* armamat_to_pyarray(const arma::mat& mat) {
     npy_intp dims[2] = { (npy_intp)mat.n_rows, (npy_intp)mat.n_cols };
-    // Création d'un tableau numpy vide
     PyObject* py_array = PyArray_SimpleNew(2, dims, NPY_DOUBLE);
     if (!py_array) {
         return nullptr;
     }
 
     double* dest_data = (double*)PyArray_DATA((PyArrayObject*)py_array);
-    // Copie des données d'Armadillo vers NumPy
     std::memcpy(dest_data, mat.memptr(), mat.n_elem * sizeof(double));
 
     return py_array;
 }
 
-// --- Wrapper pour rho_naif ---
+// --- 1. Wrapper pour rho_naif ---
 static PyObject* wrap_rho_naif(PyObject* self, PyObject* args) {
     PyObject *py_rVals, *py_zVals;
     int nbR, nbZ;
-
-    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) {
-        return nullptr;
-    }
-
+    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) return nullptr;
     arma::vec rVals, zVals;
     if (!pyarray_to_armavec(py_rVals, rVals)) return nullptr;
     if (!pyarray_to_armavec(py_zVals, zVals)) return nullptr;
-
     arma::mat res = rho_naif(rVals, zVals, nbR, nbZ);
-
     return armamat_to_pyarray(res);
 }
 
-// --- Wrapper pour rho_fabulous ---
+// --- 2. Wrapper pour rho_linearized ---
+static PyObject* wrap_rho_linearized(PyObject* self, PyObject* args) {
+    PyObject *py_rVals, *py_zVals;
+    int nbR, nbZ;
+    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) return nullptr;
+    arma::vec rVals, zVals;
+    if (!pyarray_to_armavec(py_rVals, rVals)) return nullptr;
+    if (!pyarray_to_armavec(py_zVals, zVals)) return nullptr;
+    arma::mat res = rho_linearized(rVals, zVals, nbR, nbZ);
+    return armamat_to_pyarray(res);
+}
+
+// --- 3. Wrapper pour rho_memory_max ---
+static PyObject* wrap_rho_memory_max(PyObject* self, PyObject* args) {
+    PyObject *py_rVals, *py_zVals;
+    int nbR, nbZ;
+    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) return nullptr;
+    arma::vec rVals, zVals;
+    if (!pyarray_to_armavec(py_rVals, rVals)) return nullptr;
+    if (!pyarray_to_armavec(py_zVals, zVals)) return nullptr;
+    arma::mat res = rho_memory_max(rVals, zVals, nbR, nbZ);
+    return armamat_to_pyarray(res);
+}
+
+// --- 4. Wrapper pour rho_fabulous ---
 static PyObject* wrap_rho_fabulous(PyObject* self, PyObject* args) {
     PyObject *py_rVals, *py_zVals;
     int nbR, nbZ;
-
-    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) {
-        return nullptr;
-    }
-
+    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) return nullptr;
     arma::vec rVals, zVals;
     if (!pyarray_to_armavec(py_rVals, rVals)) return nullptr;
     if (!pyarray_to_armavec(py_zVals, zVals)) return nullptr;
-
     arma::mat res = rho_fabulous(rVals, zVals, nbR, nbZ);
-
     return armamat_to_pyarray(res);
 }
 
-// Table des méthodes du module
+// Table des méthodes du module exposées à Python
 static PyMethodDef SimulationMethods[] = {
     {"rho_naif", wrap_rho_naif, METH_VARARGS, "Calcul rho_naif"},
+    {"rho_linearized", wrap_rho_linearized, METH_VARARGS, "Calcul rho_linearized"},
+    {"rho_memory_max", wrap_rho_memory_max, METH_VARARGS, "Calcul rho_memory_max"},
     {"rho_fabulous", wrap_rho_fabulous, METH_VARARGS, "Calcul rho_fabulous"},
     {nullptr, nullptr, 0, nullptr}
 };
@@ -115,6 +117,6 @@ static struct PyModuleDef simulationmodule = {
 
 // Initialisation du module
 PyMODINIT_FUNC PyInit_simulation_cpp(void) {
-    import_array(); // Indispensable pour initialiser NumPy C-API
+    import_array();
     return PyModule_Create(&simulationmodule);
 }
