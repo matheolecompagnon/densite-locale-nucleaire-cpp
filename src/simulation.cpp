@@ -176,11 +176,7 @@ arma::mat rho_kronecker(const arma::vec rVals, const arma::vec zVals, int nbR, i
 
     arma::mat result = arma::zeros(nbR, nbZ);
     int a,b, offset;
-<<<<<<< HEAD
     offset = 0;
-=======
-    BENCH_START(bench_kronecker);
->>>>>>> origin/matheo_lecompagnon
     for (int m = 0; m < basis.mMax; m++)
     {
 
