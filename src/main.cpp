@@ -17,7 +17,8 @@ int main() {
       setenv("MKL_NUM_THREADS", "8", 1);
       setenv("OMP_NUM_THREADS", "8", 1);
         int nbR = 300;
-        int nbZ = 300;
+        int nbZ = 300
+        ;
 
         // Création des grilles de points pour r et z
         arma::vec rVals = arma::linspace(0.0, 5.0, nbR);
@@ -38,7 +39,7 @@ int main() {
 
         // 2. Benchmark de rho_memory_max
         timer.tic();
-        arma::mat rho_optimized = rho_fabulous(rVals, zVals, nbR, nbZ);
+        arma::mat rho_optimized = rho_azimute(rVals, zVals, nbR, nbZ);
         double time_opt = timer.toc();
         std::cout << "[2/2] rho_memory_max exécuté en : " << time_opt << " secondes." << std::endl;
 
@@ -48,7 +49,7 @@ int main() {
         if (time_opt > 0.0) {
             double speedup = time_naif / time_opt;
             std::cout << ">>> RÉSULTAT DU BENCHMARK <<<" << std::endl;
-            std::cout << "rho_memory_max est " << speedup << " fois plus rapide que rho_naif !" << std::endl;
+            std::cout << "rho_azimute est " << speedup << " fois plus rapide que rho_naif !" << std::endl;
             std::cout << "Gain de temps : " << ((time_naif - time_opt) / time_naif) * 100.0 << "%" << std::endl;
         } else {
             std::cout << "Calculs trop rapides pour mesurer un speedup significatif." << std::endl;

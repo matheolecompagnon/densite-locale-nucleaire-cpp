@@ -988,7 +988,7 @@ arma::mat Basis::basisFunc(int m , int n , int n_z , arma::vec z, arma::vec r) {
 
 ---
 
-# IV.1. - Méthode naïve : Algorithme
+# IV.1.1 - Méthode naïve : Algorithme
 
 Rappel de la formule de la densité locale :
 `$$\rho(\mathbf{r}) = \sum_{m, n_a, n_{za}} \sum_{n_b, n_{zb}} \rho_{ab} \psi_{m, n_a, n_{za}}(\mathbf{r}) \psi^*_{m, n_b, n_{zb}}(\mathbf{r})$$`
@@ -998,40 +998,114 @@ Rappel de la formule de la densité locale :
 On parcourt l'ensemble des états quantiques `$a$` et `$b$`, et pour chaque état, on calcule les fonctions d'onde sur toute la grille spatiale `$(z, r_\perp)$`.
 ]
 
+* **Calcul de la densité spatiale ($\rho$)** : Implémentation naïve (de référence) permettant d'évaluer la densité sur une grille spatiale 2D $(r, z)$.
+
+Sous la condition de symétrie azimutale $m = m'$, cela se simplifie pour s'accorder avec la boucle principale.
+
 ```cpp
-int a = 0,b = 0;
-for (int m = 0; m < basis.mMax; m++)
-{
-for (int n = 0; n < basis.nMax(m); n++)
-{
-for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++)
-{
-    b = 0;
-    for (int mp = 0; mp < basis.mMax; mp++)
-    {
-    for (int np = 0; np < basis.nMax(mp); np++)
-    {
-    for (int n_zp = 0; n_zp < basis.n_zMax(mp, np); n_zp++)
-    {
-        arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
-        arma::mat funcB = basis.basisFunc(mp, np, n_zp, zVals, rVals);
-        if(m == mp) result += funcA % funcB * rho(a, b);
-        b++;
-    }
-    }
-    }
+arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+```
+---
+
+# IV.1.2 - Analyse du Corps de la Fonction (Algorithme Naïf)
+
+* **Initialisation et Validation :**
+  ```cpp
+  Basis basis(BR, BZ, N, Q);
+  arma::mat rho;
+
+  // arma::mat::load renvoie un boolean en fonction de la réussite du chargement
+  if (!rho.load("rho.arma", arma::arma_ascii) || 
+
+      //ON verifie que la matrice soit à la bonne taille
+      rho.n_rows < (unsigned int)basis.mMax || rho.n_cols < (unsigned int)basis.mMax) {
+
+      //On renvoie une matrice null en cas d'echec de lecture
+      return arma::zeros(nbR, nbZ);
+
+  }
+```
+
+---
+
+# IV.1.2 - Analyse du Corps de la Fonction (Algorithme Naïf)
+
+* **Cors de la fonction :**
+
+```cpp
+arma::mat result = arma::zeros(nbR, nbZ);
+int a = 0, b = 0;
+
+
+//On boucle sur le premier triplet quantique a
+for (int m = 0; m < basis.mMax; m++) {
+for (int n = 0; n < basis.nMax(m); n++) {
+for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
+
+        &   //On boucle sur le second triplet quantique b
+            b = 0;
+            for (int mp = 0; mp < basis.mMax; mp++) {
+            for (int np = 0; np < basis.nMax(mp); np++) {
+            for (int n_zp = 0; n_zp < basis.n_zMax(mp, np); n_zp++) {
+
+                arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
+                arma::mat funcB = basis.basisFunc(mp, np, n_zp, zVals, rVals);
+
+                result += funcA % funcB * rho(a, b);
+                
+                b++;
+            }
+            }
+            }
     a++;
 }
 }
 }
 ```
 
+
+
 ---
 
+# IV.1.3 - Subtilités Techniques et Limitations
+
+### 1. Caractéristiques de l'Implémentation Naïve
+* **Rejet des filtres azimutaux :** L'absence de condition sur $m$ et $m'$ force le calcul pour toutes les combinaisons possibles.
+* **Non-exploitation de la symétrie :** La symétrie inhérente à la matrice `rho` n'est pas utilisée pour diviser le volume de calcul.
+
+### 2. Complexité et Performances
+* **Complexité temporelle maximale :** Les 6 boucles imbriquées parcourent l'intégralité de l'espace des triplets quantiques sans raccourci.
+* **Rôle Pédagogique :** Cette version sert de référence exacte mais non optimisée, idéale pour valider les résultats avant d'implémenter des versions vectorisées ou factorisées.
+
+---
+
+# Analyse : Gâchis Calculatoire (Matrice Diagonale par Blocs)
+
+### 1. Structure par blocs indexés sur $m$
+La matrice $\rho$ est structurée par blocs diagonaux associés à chaque valeur du nombre quantique $m$ :
+
+<br>
+
+.hcenter[
+| | `$m=0$` | `$m=1$` | `...` | `$m=m_{\text{max}}-1$` |
+|:---:|:---:|:---:|:---:|:---:|
+| `$m=0$` | **Bloc 0** | `0` | `...` | `0` |
+| `$m=1$` | `0` | **Bloc 1** | `...` | `0` |
+| `...` | `...` | `...` | `...` | `...` |
+| `$m=m_{\text{max}}-1$` | `0` | `0` | `...` | **Bloc final** |
+]
+
+<br>
+
+.alert.animated.fadeInUp[
+**Problème :** 
+L'algorithme naïf effectue l'opération `result += funcA % funcB * rho(a, b)` pour l'ensemble des coefficients, en réalisant des produits matriciels extrêmement coûteux pour toutes les zones de zéros situées hors de la diagonale des blocs.
+]
+---
 # IV.2. - Première Optimisation : factorisation de Kronecker
 
 
-.
+
 ```cpp
 int a,b, offset;
 for (int m = 0; m < basis.mMax; m++)
