@@ -1714,6 +1714,7 @@ En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Arma
 ]
 
 ---
+
 # Résultats 
 
 
@@ -1738,6 +1739,61 @@ En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Arma
 
 ---
 
+# V.2. - Benchmarks
+
+.row[
+.column[
+.block[`nb_warmup = 10`, 
+`nb_iter = 10`,
+`nbR=5`,
+`nbZ=5`]
+
+| Algorithme | Temps (s/res.) | Accélération |
+|:---|:---:|:---:|
+| Naïf | 0.128661 | 1x |
+| Kroenecker | 0.015215 | x8.46 |
+| Factorized | 0.007923 | x16.24 |
+| Linearized | 0.008247 | x15.60 |
+| Linearized 2. | 0.015993 | x8.04 |
+| Optimized | 0.007940 | x16.20 |
+| Symmetric | 0.004247 | x30.29 |
+| Sym. Opti. | 0.004266 | x30.16 |
+| Memory max | 0.000180 | x714.78 |
+| Fabulous | 0.000242 | x531.66 |
+| Ultimate | 0.000212 | x606.89 |
+
+.block[Temps d'execution : 5.970814 s]
+]
+.column[
+
+.block[
+`nb_warmup = 10`, 
+`nb_iter = 10`,
+`nbR=30`,
+`nbZ=30`
+]
+
+| Algorithme | Temps (s/res.) | Accélération |
+|:---|:---:|:---:|
+| Naïf | 0.496243 | 1x |
+| Kroenecker | 0.057893 | x8.57 |
+| Factorized | 0.031446 | x15.78 |
+| Linearized | 0.031412 | x15.80 |
+| Linearized 2. | 0.058561 | x8.47 |
+| Optimized | 0.031739 | x15.64 |
+| Symmetric | 0.017871 | x27.77 |
+| Sym. Opti. | 0.017863 | x27.78 |
+| Memory max | 0.003696 | x134.26 |
+| Fabulous | 0.010398 | x47.72 |
+| Ultimate | 0.008173 | x60.72 |
+
+
+.block[Temps d'execution : 17.369790 s]
+]
+]
+
+---
+
 # Résultats 
 
 1. Wrapper python
@@ -1746,49 +1802,35 @@ En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Arma
 
 ---
 
-valgrind :
+# V.3. - Gestion mémoire
+
+
 
 ```sh
+make debug
 make
-valgrind
 ```
 
-```valgrind
-==161699== HEAP SUMMARY:
-==161699==     in use at exit: 0 bytes in 0 blocks
-==161699==   total heap usage: 29,934,518 allocs, 29,934,518 frees, 52,791,166,540 bytes allocated
-==161699==
-==161699== All heap blocks were freed -- no leaks are possible
-==161699==
-==161699== For lists of detected and suppressed errors, rerun with: -s
-==161699== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```Makefile
+OPTIONS_DEBUG   := $(OPTIONS_COMMON) -fsanitize=address ...
 ```
 
-perf :
+.block[
+`-fsanitize=address` permet de faire un rapport d'erreur en cas d'erreur.
+]
 
+
+.alert[
+Le benchmark utilise tous les algorithmes : il permet donc d'évaluer la gestion mémoire
+]
+
+```sh
+make bench
+valgrind ./exec
 ```
-make exec OPTIONS="-Wall -Wextra -Werror -Iinclude -O2 -g -fno-omit-frame-pointer -DBENCH"
-# Temps, IPC, cache-misses (3 répétitions)
-perf stat -r 3 -e cycles,instructions,cache-references,cache-misses,branch-misses ./exec
 
-# Où passe le temps
-perf record -F 999 --call-graph dwarf ./exec
-perf report --no-children
-```
+```gnome-terminal
 
-Pour voir où il passait le temps, le problème était que l'on ne voyait que des adresses
-
-```
-    14,539,564,037      armv8_pmuv3_0/cycles/u                                                  ( +-  0.15% )
-     1,020,732,189      armv8_pmuv3_1/cycles/u                                                  ( +- 17.32% )  (17.29%)
-    76,090,760,718      armv8_pmuv3_0/instructions/u     #    5.23  insn per cycle              ( +-  0.00% )
-       391,055,998      armv8_pmuv3_1/instructions/u     #    0.38  insn per cycle              ( +- 16.79% )  (17.29%)
-    25,874,426,152      armv8_pmuv3_0/cache-references/u                                        ( +-  0.06% )
-       104,312,410      armv8_pmuv3_1/cache-references/u                                        ( +- 16.36% )  (17.29%)
-       134,361,361      armv8_pmuv3_0/cache-misses/u     #    0.52% of all cache refs           ( +-  3.09% )
-         1,541,754      armv8_pmuv3_1/cache-misses/u     #    1.48% of all cache refs           ( +- 15.62% )  (17.29%)
-        31,914,939      armv8_pmuv3_0/branch-misses/u                                           ( +-  0.09% )
-            58,606      armv8_pmuv3_1/branch-misses/u                                           ( +- 15.20% )  (17.29%)
 ```
 
     </textarea>

@@ -11,7 +11,8 @@
 #define Q 1.3
 
 Bench bench_naif, bench_kronecker, bench_factorized, bench_linearized, bench_linearized_again, 
-bench_optimized_m, bench_symmetric, bench_symmetric_optimized, bench_memory_max, bench_fabulous;
+bench_optimized_m, bench_symmetric, bench_symmetric_optimized, bench_memory_max, bench_fabulous,
+bench_ultimate;
 
 arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ){
 
@@ -82,6 +83,8 @@ arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nb
         }
     }
 
+    BENCH_END(bench_naif);
+
     return result;
 }
 
@@ -106,6 +109,7 @@ arma::mat rho_azimutal(const arma::vec rVals, const arma::vec zVals, int nbR, in
     }
 
     arma::mat result = arma::zeros(nbR, nbZ);
+
     int a = 0,b = 0;
     for (int m = 0; m < basis.mMax; m++)
     {
@@ -147,8 +151,6 @@ arma::mat rho_azimutal(const arma::vec rVals, const arma::vec zVals, int nbR, in
         }
     }
 
-    BENCH_END(bench_naif);
-
     return result;
 }
 
@@ -177,6 +179,9 @@ arma::mat rho_kronecker(const arma::vec rVals, const arma::vec zVals, int nbR, i
     arma::mat result = arma::zeros(nbR, nbZ);
     int a,b, offset;
     offset = 0;
+
+    BENCH_START(bench_kronecker);
+
     for (int m = 0; m < basis.mMax; m++)
     {
 
@@ -755,6 +760,8 @@ arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, in
         return arma::zeros(nbR, nbZ);
     }
 
+    BENCH_START(bench_fabulous);
+
     std::vector<BasisState> states;
     for (int m = 0; m < basis.mMax; m++) {
         for (int n = 0; n < basis.nMax(m); n++) {
@@ -789,8 +796,6 @@ arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, in
     arma::mat F_global(nbR * nbZ, max_K_m);
 
     arma::mat result = arma::zeros(nbR, nbZ);
-
-    BENCH_START(bench_fabulous);
 
     for (int m = 0; m < basis.mMax; m++) {
         const auto& indices = indices_par_m[m];
@@ -834,6 +839,8 @@ arma::mat rho_ultimate(const arma::vec rVals, const arma::vec zVals, int nbR, in
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         return arma::zeros(nbR, nbZ);
     }
+
+    BENCH_START(bench_ultimate);
 
     // =========================================================================
     // OPTIMISATION 1 : MÉMOÏSATION 1D EXTRÊME
@@ -940,6 +947,8 @@ arma::mat rho_ultimate(const arma::vec rVals, const arma::vec zVals, int nbR, in
             result += arma::reshape(diag_R_m, nbR, nbZ);
         }
     }
+
+    BENCH_END(bench_ultimate);
 
     return result;
 }

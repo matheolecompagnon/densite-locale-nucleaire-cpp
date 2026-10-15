@@ -19,7 +19,7 @@ test_cpp     := bin/tests.cpp
 test_obj     := bin/tests.o
 test_exec    := bin/test
 
-.PHONY: all debug release run test bench clean
+.PHONY: all debug release run test bench perf clean
 
 all: debug
 
@@ -34,10 +34,17 @@ release: run
 bench: OPTIONS := $(OPTIONS_RELEASE) -DBENCH
 bench: run
 
+# ------------- Perf ------------
+
+perf: OPTIONS := $(OPTIONS_COMMON) -O0 -g -fno-omit-frame-pointer
+perf: $(main_exec)
+	perf record -F 999 -g ./$(main_exec) $(ARGS)
+	perf report --no-children --stdio 2>/dev/null | head -50
+
 # ---------- Programme principal ----------
 run: $(main_exec)
 	@printf "\n\n========== Debut Affichage Programme ==========\n\n"
-	@./$(main_exec)
+	@./$(main_exec) $(ARGS)
 	@printf "\n\n========== Fin Affichage Programme ==========\n\n"
 
 $(main_exec): src/main.cpp $(objects)

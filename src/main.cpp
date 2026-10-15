@@ -8,6 +8,7 @@
 #include <armadillo>
 #include "simulation.hpp" 
 #include <cstdlib>
+#include <string>
 
 
 #ifdef BENCH
@@ -15,14 +16,50 @@
     #include "bench.hpp"
 
     extern Bench bench_naif, bench_kronecker, bench_factorized, bench_linearized, bench_linearized_again, 
-    bench_optimized_m, bench_symmetric, bench_symmetric_optimized, bench_memory_max, bench_fabulous;
+    bench_optimized_m, bench_symmetric, bench_symmetric_optimized, bench_memory_max, bench_fabulous,
+    bench_ultimate;
 
 #endif
 
-int main() {
+int main(int argc, char* argv[]) {
 
     arma::wall_clock tps_exec;
     tps_exec.tic();
+
+    // Mode profilage : ./exec <algo>
+    if (argc > 1) {
+        std::string algo = argv[1];
+        int n = 100;
+        arma::vec r = arma::linspace(0.1, 10.0, n);
+        arma::vec z = arma::linspace(-5.0, 5.0, n);
+        double checksum = 0.0;
+
+        std::cout << "=== Mode profilage ===" <<std::endl;
+        std::cout << "Algorithme : " << algo << std::endl;
+
+        for (int i = 0; i < 5; i++) {
+            arma::mat res;
+
+            if (algo == "naif"){res = rho_naif(r, z, n, n);}
+            else if (algo == "kronecker"){res = rho_kronecker(r, z, n, n);}
+            else if (algo == "factorized"){res = rho_factorized(r, z, n, n); }
+            else if (algo == "linearized"){res = rho_linearized(r, z, n, n);}
+            else if (algo == "linearized2"){res = rho_linearized_again(r, z, n, n);}
+            else if (algo == "optimized"){ res = rho_optimized_m(r, z, n, n);}
+            else if (algo == "symmetric"){res = rho_symmetric(r, z, n, n);}
+            else if (algo == "symopti"){res = rho_symmetric_optimized(r, z, n, n);}
+            else if (algo == "memorymax"){res = rho_memory_max(r, z, n, n);}
+            else if (algo == "fabulous") {res = rho_fabulous(r, z, n, n);}
+            else if (algo == "ultimate"){res = rho_ultimate(r, z, n, n);}
+            else { std::cerr << "Algo inconnu : " << algo << std::endl; return 1; }
+
+            // Checksum anti évaluation paresseuse
+            checksum += arma::norm(res, 1);
+        }
+
+        std::cout << "Checksum : " << checksum << std::endl;
+        return 0;
+    }
 
     #ifdef BENCH
 
@@ -30,20 +67,20 @@ int main() {
         arma::arma_rng::set_seed(3);
 
         // Initialisation des positions pour 50*50 positions différentes : 2500
-        int nbR = 5; 
-        int nbZ = 5;
+        int nbR = 30; 
+        int nbZ = 30;
         arma::vec rVals = arma::linspace<arma::vec>(0.1, 10.0, nbR);
         arma::vec zVals = arma::linspace<arma::vec>(-5.0, 5.0, nbZ);
 
         // Résultats
         arma::mat res_naif, res_kron, res_fact, res_lin, res_lin_again, res_opt_m,
-        res_sym, res_sym_opti, res_mem, res_fab; 
+        res_sym, res_sym_opti, res_mem, res_fab, res_ult; 
         // Permet d'éviter l'évaluation paresseuse d'armadillo
         double anti_optimization_checksum = 0.0;
 
         // Nombre d'itérations
         int nb_warmup = 10;
-        int nb_iter = 100;
+        int nb_iter = 10;
 
         // Préchauffe (Warmup)
         for (int i=0; i<nb_warmup; i++){
@@ -57,6 +94,7 @@ int main() {
             res_sym_opti = rho_symmetric_optimized(rVals, zVals, nbR, nbZ);
             res_mem = rho_memory_max(rVals, zVals, nbR, nbZ);
             res_fab = rho_fabulous(rVals, zVals, nbR, nbZ);
+            res_ult = rho_ultimate(rVals, zVals, nbR, nbZ);
 
             anti_optimization_checksum += arma::norm(res_naif, 1) 
                                 + arma::norm(res_kron, 1) 
@@ -67,7 +105,8 @@ int main() {
                                 + arma::norm(res_sym, 1)
                                 + arma::norm(res_sym_opti, 1)
                                 + arma::norm(res_mem, 1)
-                                + arma::norm(res_fab, 1);
+                                + arma::norm(res_fab, 1)
+                                + arma::norm(res_ult, 1);
         }
 
         // Compteurs à zéro
@@ -81,6 +120,7 @@ int main() {
         BENCH_RESET(bench_symmetric_optimized);
         BENCH_RESET(bench_memory_max);
         BENCH_RESET(bench_fabulous);
+        BENCH_RESET(bench_ultimate);
 
         // Mesures
 
@@ -95,6 +135,7 @@ int main() {
             res_sym_opti = rho_symmetric_optimized(rVals, zVals, nbR, nbZ);
             res_mem = rho_memory_max(rVals, zVals, nbR, nbZ);
             res_fab = rho_fabulous(rVals, zVals, nbR, nbZ);
+            res_ult = rho_ultimate(rVals, zVals, nbR, nbZ);
 
             anti_optimization_checksum += arma::norm(res_naif, 1) 
                                 + arma::norm(res_kron, 1) 
@@ -105,7 +146,8 @@ int main() {
                                 + arma::norm(res_sym, 1)
                                 + arma::norm(res_sym_opti, 1)
                                 + arma::norm(res_mem, 1)
-                                + arma::norm(res_fab, 1);
+                                + arma::norm(res_fab, 1)
+                                + arma::norm(res_ult, 1);
 
         }
 
@@ -136,6 +178,8 @@ int main() {
             "Memory max   ");
         BENCH_PRINT(bench_fabulous, 
             "Fabulous     ");
+        BENCH_PRINT(bench_ultimate, 
+            "Ultimate     ");
         
         std::cout << "============ FIN BENCHMARK =============" << std::endl;
 
@@ -146,8 +190,8 @@ int main() {
       setenv("OPENBLAS_NUM_THREADS", "8", 1);
       setenv("MKL_NUM_THREADS", "8", 1);
       setenv("OMP_NUM_THREADS", "8", 1);
-        int nbR = 300;
-        int nbZ = 300;
+        int nbR = 30;
+        int nbZ = 30;
 
         // Création des grilles de points pour r et z
         arma::vec rVals = arma::linspace(0.0, 5.0, nbR);
