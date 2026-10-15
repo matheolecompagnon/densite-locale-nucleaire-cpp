@@ -1939,6 +1939,93 @@ Pour voir où il passait le temps, le problème était que l'on ne voyait que de
 - Produire le diaporama **au fil de l'eau** : noter les difficultés surmontées et intégrer les schémas d'architecture dès qu'une partie est validée.
 ]
 
+---
+# V.3 - Résultats Visuels : Les Coupes 2D
+
+.block[
+### Comparaison des profils de densité
+Voici les coupes transversales physiques obtenues via le wrapper C++ et tracées sous Python, mettant en évidence les différentes étapes d'optimisation.
+]
+
+.row[
+.column.w45[
+.hcenter[![](images/density_naif_2D.png)]
+.hcenter.small[`rho_naif` (Référence - 1.0x)]
+]
+
+.column.w10[
+&nbsp;
+]
+
+.column.w45[
+.hcenter[![](images/density_linearized_2D.png)]
+.hcenter.small[`rho_linearized` (~ [X]x plus rapide)]
+]
+]
+
+---
+
+# V.3 - Résultats Visuels : Mémoïsation & BLAS
+
+.block[
+### Des performances accrus sans perte de précision
+]
+
+.row[
+.column.w45[
+.hcenter[![](images/density_memory_max_2D.png)]
+.hcenter.small[`rho_memory_max` (~ [Y]x plus rapide)]
+]
+
+.column.w10[
+&nbsp;
+]
+
+.column.w45[
+.hcenter[![](images/density_fabulous_2D.png)]
+.hcenter.small[`rho_fabulous` (> 600x plus rapide)]
+]
+]
+
+---
+
+# V.3 - Validation Numérique : Écarts vs Naïf
+
+.block[
+### Cartes de différence ($\Delta\rho$)
+Vérification que les optimisations ne modifient pas la physique ($\Delta\rho = \text{Optimisé} - \text{Naïf}$). *(Note : le cas linéarisé, identique à zéro, sera commenté à l'oral).*
+]
+
+.row[
+.column.w50[
+.hcenter[<img src="images/diff_memory_max_vs_naif.png" width="90%">]
+.hcenter.small[`memory_max` vs `naif` (~ [Y]x)]
+]
+
+.column.w50[
+.hcenter[<img src="images/diff_fabulous_vs_naif.png" width="90%">]
+.hcenter.small[`fabulous` vs `naif` (~ [Y]x)]
+]
+]
+
+.alert.hcenter[
+Erreurs limitées aux bruits d'arrondis machine ($\approx 10^{-15}$).
+]
+
+---
+
+# V.3 - Vue 3D de la Densité
+
+.block[
+### Topographie du noyau à $Z=0$
+Grâce à l'invariance selon $\theta$, la projection en coordonnées cylindriques permet d'observer le relief 3D de la densité nucléaire au centre.
+]
+
+.hcenter.shadow.w60[![](images/density_fabulous_3D_equatorial.png)]
+
+.alert.hcenter[
+Visualisation interactive générée à partir des données de `rho_fabulous`.
+]
     </textarea>
 
     <script src="core/javascript/remark.js"></script>
