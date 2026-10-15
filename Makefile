@@ -66,6 +66,21 @@ $(test_obj): $(test_cpp)
 $(test_cpp): $(test_headers) | bin
 	$(CXXTESTGEN) --error-printer -o $@ $(test_headers)
 
+
+# ---------- Module Python & Script de génération ----------
+generate: $(PY_TARGET)
+	
+	@printf "\n\n========== Lancement de generation.py ==========\n\n"
+	python3 generation.py
+	@printf "\n\n===============================================\n\n"
+
+$(PY_TARGET): $(PY_OBJS) $(objects)
+	$(CXX) $(OPTIONS) -shared $^ -o $@ $(LDLIBS)
+
+bin/wrapper.o: src/wrapper.cpp | bin
+	$(CXX) $(OPTIONS) $(PYTHON_INCLUDES) $(NUMPY_INCLUDES) $(DEPFLAGS) -c $< -o $@
+
+
 # ---------- Compilation des sources ----------
 bin/%.o: src/%.cpp | bin
 	$(CXX) $(OPTIONS) $(DEPFLAGS) -c $< -o $@

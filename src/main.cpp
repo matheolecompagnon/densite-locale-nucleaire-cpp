@@ -67,8 +67,8 @@ int main(int argc, char* argv[]) {
         arma::arma_rng::set_seed(3);
 
         // Initialisation des positions pour 50*50 positions différentes : 2500
-        int nbR = 30; 
-        int nbZ = 30;
+        int nbR = 100; 
+        int nbZ = 100;
         arma::vec rVals = arma::linspace<arma::vec>(0.1, 10.0, nbR);
         arma::vec zVals = arma::linspace<arma::vec>(-5.0, 5.0, nbZ);
 
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 
         // Nombre d'itérations
         int nb_warmup = 10;
-        int nb_iter = 10;
+        int nb_iter = 60;
 
         // Préchauffe (Warmup)
         for (int i=0; i<nb_warmup; i++){

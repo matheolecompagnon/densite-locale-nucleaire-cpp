@@ -1,29 +1,32 @@
 /**
  * @file wrapper.cpp
- * @brief Module Python « ipsdev » (Python.h) : expose la fonction phi du projet IPS-DEV.
- *
- * Python :
- *     import ipsdev
- *     vals = ipsdev.phi(m, n, n_z, [(r0), (r1), ...], [(r0), (r1), ...])
- *     # -> [phi(r0, z0), phi(r1, z1), ...]   une valeur par point
- *
- * phi_{m,n,n_z}(r, z) = Z(z, n_z) * R(r, m, n)
- * (la phase e^{i m theta} est omise : on ne garde que la partie indépendante de theta, réelle)
- *
- * Le calcul est fait par la classe Basis :
- *   - Basis::zPart(z, n_z)  -> Z(z, n_z)
- *   - Basis::rPart(r, m, n) -> R(r, m, n)   (attention : le 3e paramètre de rPart est le n de la
- *                                             diapo, même si l'en-tête l'appelle n_z)
+ * @brief Module Python « simulation_cpp » : expose les fonctions de calcul de densité C++ à Python[cite: 3].
+ * 
+ * Ce fichier implémente l'interface de liaison entre les scripts Python et le cœur de 
+ * calcul C++ en utilisant l'API C de Python et les objets de la bibliothèque Armadillo et NumPy[cite: 3].
  */
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <numpy/arrayobject.h>
 #include <armadillo>
 
-// Déclarations des fonctions existantes (provenant de simulation.cpp)
+// Déclarations des fonctions de simulation existantes
 arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+arma::mat rho_linearized(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
 arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
 
-// Fonction utilitaire pour convertir un tableau NumPy 1D en arma::vec
+/**
+ * @brief Convertit un tableau NumPy 1D en vecteur Armadillo (`arma::vec`).
+ * 
+ * Cette fonction extrait le pointeur mémoire brut d'un `numpy.ndarray` pour l'injecter 
+ * directement dans un vecteur Armadillo sans duplication inutile (principe de zéro-copie)[cite: 3].
+ * 
+ * @param obj Pointeur vers l'objet Python représentant le tableau.
+ * @param out_vec Référence vers le vecteur Armadillo de sortie.
+ * @return true si la conversion réussit, false en cas d'erreur de type ou de dimension.
+ */
 bool pyarray_to_armavec(PyObject* obj, arma::vec& out_vec) {
     PyArrayObject* array = (PyArrayObject*)PyArray_FROM_OTF(obj, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
     if (!array) {
@@ -45,76 +48,98 @@ bool pyarray_to_armavec(PyObject* obj, arma::vec& out_vec) {
     return true;
 }
 
-// Fonction utilitaire pour convertir un arma::mat en numpy.ndarray 2D
+/**
+ * @brief Convertit une matrice Armadillo (`arma::mat`) en un tableau NumPy 2D.
+ * 
+ * Alloue un nouveau tableau NumPy de dimensions 2D correspondantes et y copie 
+ * les données calculées par le solveur C++[cite: 3].
+ * 
+ * @param mat La matrice Armadillo à convertir.
+ * @return PyObject* Un pointeur vers le nouveau `numpy.ndarray` créé, ou nullptr en cas d'échec.
+ */
 PyObject* armamat_to_pyarray(const arma::mat& mat) {
     npy_intp dims[2] = { (npy_intp)mat.n_rows, (npy_intp)mat.n_cols };
-    // Création d'un tableau numpy vide
     PyObject* py_array = PyArray_SimpleNew(2, dims, NPY_DOUBLE);
     if (!py_array) {
         return nullptr;
     }
 
     double* dest_data = (double*)PyArray_DATA((PyArrayObject*)py_array);
-    // Copie des données d'Armadillo vers NumPy
     std::memcpy(dest_data, mat.memptr(), mat.n_elem * sizeof(double));
 
     return py_array;
 }
 
-// --- Wrapper pour rho_naif ---
+/** @brief Enveloppe Python pour l'algorithme naïf (`rho_naif`)[cite: 3]. */
 static PyObject* wrap_rho_naif(PyObject* self, PyObject* args) {
     PyObject *py_rVals, *py_zVals;
     int nbR, nbZ;
-
-    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) {
-        return nullptr;
-    }
-
+    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) return nullptr;
     arma::vec rVals, zVals;
     if (!pyarray_to_armavec(py_rVals, rVals)) return nullptr;
     if (!pyarray_to_armavec(py_zVals, zVals)) return nullptr;
-
     arma::mat res = rho_naif(rVals, zVals, nbR, nbZ);
-
     return armamat_to_pyarray(res);
 }
 
-// --- Wrapper pour rho_fabulous ---
+/** @brief Enveloppe Python pour l'algorithme linéarisé (`rho_linearized`)[cite: 3]. */
+static PyObject* wrap_rho_linearized(PyObject* self, PyObject* args) {
+    PyObject *py_rVals, *py_zVals;
+    int nbR, nbZ;
+    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) return nullptr;
+    arma::vec rVals, zVals;
+    if (!pyarray_to_armavec(py_rVals, rVals)) return nullptr;
+    if (!pyarray_to_armavec(py_zVals, zVals)) return nullptr;
+    arma::mat res = rho_linearized(rVals, zVals, nbR, nbZ);
+    return armamat_to_pyarray(res);
+}
+
+/** @brief Enveloppe Python pour l'algorithme avec mémoïsation maximale (`rho_memory_max`)[cite: 3]. */
+static PyObject* wrap_rho_memory_max(PyObject* self, PyObject* args) {
+    PyObject *py_rVals, *py_zVals;
+    int nbR, nbZ;
+    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) return nullptr;
+    arma::vec rVals, zVals;
+    if (!pyarray_to_armavec(py_rVals, rVals)) return nullptr;
+    if (!pyarray_to_armavec(py_zVals, zVals)) return nullptr;
+    arma::mat res = rho_memory_max(rVals, zVals, nbR, nbZ);
+    return armamat_to_pyarray(res);
+}
+
+/** @brief Enveloppe Python pour l'algorithme haute performance BLAS/DGEMM (`rho_fabulous`)[cite: 3]. */
 static PyObject* wrap_rho_fabulous(PyObject* self, PyObject* args) {
     PyObject *py_rVals, *py_zVals;
     int nbR, nbZ;
-
-    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) {
-        return nullptr;
-    }
-
+    if (!PyArg_ParseTuple(args, "OOii", &py_rVals, &py_zVals, &nbR, &nbZ)) return nullptr;
     arma::vec rVals, zVals;
     if (!pyarray_to_armavec(py_rVals, rVals)) return nullptr;
     if (!pyarray_to_armavec(py_zVals, zVals)) return nullptr;
-
     arma::mat res = rho_fabulous(rVals, zVals, nbR, nbZ);
-
     return armamat_to_pyarray(res);
 }
 
-// Table des méthodes du module
+/// Table des méthodes du module exposées à l'interpréteur Python[cite: 3]
 static PyMethodDef SimulationMethods[] = {
-    {"rho_naif", wrap_rho_naif, METH_VARARGS, "Calcul rho_naif"},
-    {"rho_fabulous", wrap_rho_fabulous, METH_VARARGS, "Calcul rho_fabulous"},
+    {"rho_naif", wrap_rho_naif, METH_VARARGS, "Calcul de la densité nucléaire via l'algorithme naïf."},
+    {"rho_linearized", wrap_rho_linearized, METH_VARARGS, "Calcul de la densité via l'algorithme linéarisé."},
+    {"rho_memory_max", wrap_rho_memory_max, METH_VARARGS, "Calcul de la densité avec mémoïsation maximale."},
+    {"rho_fabulous", wrap_rho_fabulous, METH_VARARGS, "Calcul de la densité optimisée BLAS / DGEMM."},
     {nullptr, nullptr, 0, nullptr}
 };
 
-// Structure du module
+/// Définition structurelle du module Python[cite: 3]
 static struct PyModuleDef simulationmodule = {
     PyModuleDef_HEAD_INIT,
     "simulation_cpp",
-    "Module C++ pour les calculs de rho avec Armadillo",
+    "Module C++ pour les calculs de densité nucléaire avec Armadillo",
     -1,
     SimulationMethods
 };
 
-// Initialisation du module
+/**
+ * @brief Point d'entrée d'initialisation du module lors de l'instruction `import simulation_cpp` en Python[cite: 3].
+ */
 PyMODINIT_FUNC PyInit_simulation_cpp(void) {
-    import_array(); // Indispensable pour initialiser NumPy C-API
+    import_array(); // Initialisation indispensable de l'API C de NumPy
     return PyModule_Create(&simulationmodule);
 }

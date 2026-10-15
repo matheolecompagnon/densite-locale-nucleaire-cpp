@@ -140,3 +140,75 @@ Durée totale du benchmark : environ 739 s.
 
 - Les mesures ci-dessus ont été obtenues avec les options `OPTIONS_RELEASE`.
 - Les temps dépendent de la machine. À compléter : processeur, mémoire, version de `g++` et d'Armadillo.
+
+## Module C++ et Wrapper Python Avancé (`simulation_cpp`)
+
+En plus des exécutables natifs, le projet propose un module Python natif nommé `simulation_cpp` permettant d'appeler directement les cœurs de calcul optimisés depuis des scripts d'analyse ou de visualisation[cite: 3].
+
+### Fonctions exposées
+Le wrapper expose les principales versions du solveur de densité (mais pas toutes) :
+- `simulation_cpp.rho_naif(rVals, zVals, nbR, nbZ)`[cite: 3]
+- `simulation_cpp.rho_linearized(rVals, zVals, nbR, nbZ)`[cite: 3]
+- `simulation_cpp.rho_memory_max(rVals, zVals, nbR, nbZ)`[cite: 3]
+- `simulation_cpp.rho_fabulous(rVals, zVals, nbR, nbZ)`[cite: 3]
+
+### Exemple d'utilisation en Python
+
+```python
+import numpy as np
+import simulation_cpp
+
+# Définition de la grille radiale et axiale
+rVals = np.linspace(0.01, 10.0, 150)
+zVals = np.linspace(-10.0, 10.0, 150)
+nbR, nbZ = len(rVals), len(zVals)
+
+# Appel de la version ultra-optimisée (Fabulous / BLAS 3)
+rho_matrix = simulation_cpp.rho_fabulous(rVals, zVals, nbR, nbZ)
+
+print("Dimensions de la matrice de densité :", rho_matrix.shape)
+
+# État de la Documentation Doxygen - Projet IPSDEV
+
+Ce document dresse le bilan de la documentation Doxygen mise en place pour l'ensemble du projet de modélisation de la densité nucléaire en C++ et son interface Python.
+
+
+## 1. Couverture du Cœur de Calcul C++
+
+L'intégralité des fonctions de résolution et d'optimisation de la densité nucléaire est documentée selon les standards Doxygen (`@brief`, `@param`, `@return`, `@note`) :
+
+* **Approches de base et filtrage :**
+  * `rho_naif` : Implémentation de référence à 6 boucles imbriquées.
+  * `rho_kronecker` : Exploitation de l'invariance azimutale via le filtre $m == mp$.
+
+* **Stratégies de réorganisation :**
+  * `rho_factorized` : Utilisation d'un décalage (*offset*) pour cibler directement les blocs $m$.
+  * `rho_linearized` : Aplatissement de l'espace des états en un vecteur linéaire unique.
+  * `rho_linearized_again` : Variante à boucle unique (documentée avec la note de performance sur le surcoût des divisions/modulos).
+  * `rho_optimized_m` : Indexation préalable des états par blocs de moment cinétique $m$.
+
+* **Optimisations mémoire et symétrie :**
+  * `rho_symmetric` & `rho_symmetric_optimized` : Exploitation de la symétrie des termes ($i \le j$) pour diviser les calculs par deux.
+  * `rho_memory_max` : Mémoïsation maximale des fonctions de base, avec une attention particulière portée sur l'optimisation des caches CPU et du **TLB (Translation Lookaside Buffer)** en HPC.
+
+* **Niveaux supérieurs et mathématiques avancées :**
+  * `rho_fabulous` : Documentation détaillée sur l'utilisation de l'algèbre linéaire haut niveau et des routines **BLAS 3 (DGEMM)**, incluant une distinction claire avec les niveaux BLAS 1 et 2.
+  * `rho_ultimate` : Intégration de la décomposition de **Cholesky** (rappel d'analyse numérique du semestre 1 sur les matrices définies positives) et gestion des fallbacks.
+
+
+
+## 2. Structures et Classes
+
+* **`BasisState`** : Structure représentant un état quantique unique par ses trois nombres quantiques $(m, n, n_z)$.
+* **`Basis`** : Classe de gestion de la base fonctionnelle (parties axiales $Z$ et radiales $R$).
+
+
+## 3. Documentation du Wrapper Python (`wrapper.cpp`)
+
+Le fichier d'interface C++/Python (`wrapper.cpp`) est entièrement documenté :
+* Description des fonctions utilitaires de conversion (zéro-copie de `numpy.ndarray` vers `arma::vec` et conversion inverse `arma::mat` vers NumPy).
+* Documentation des enveloppes de liaison (`wrap_rho_naif`, `wrap_rho_fabulous`, etc.) exposant le module natif `simulation_cpp` à l'interpréteur Python.
+
+## 4. Génération de la Documentation
+
+Si un fichier de configuration Doxygen (`Doxyfile`) est présent à la racine du projet, la documentation technique HTML/LaTeX peut être générée instantanément via la commande :

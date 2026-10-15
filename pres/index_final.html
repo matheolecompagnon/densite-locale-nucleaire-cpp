@@ -106,9 +106,17 @@ Le but était de la calculer puis de l'afficher.
   <br>
   <li><strong>Résultats</strong>
     <ol style="list-style-type: decimal; padding-left: 20px;">
-      <li>Wrapper python</li>
-      <li>Résultats et benchmarks</li>
-      <li>Outils de profilage</li>
+      <li>Résultats</li>
+      <li>Benchmarks</li>
+      <li>Profilage</li>
+    </ol>
+  </li>
+  <li><strong>Gestion de Projet</strong>
+    <ol style="list-style-type: decimal; padding-left: 20px;">
+      <li>Documentation</li>
+      <li>Planification</li>
+      <li>Architecture</li>
+      <li>Soutenance</li>
     </ol>
   </li>
 </ol>
@@ -1361,7 +1369,7 @@ arma::mat Basis::basisFunc(int m , int n , int n_z , arma::vec z, arma::vec r) {
 
 2. Linéarisation et propriétés physiques de `$\rho$`
 
-3. Mémoïsation et compromis Temps / Mémoire (`rho_memory_max`)
+3. Mémorïsation et compromis Temps / Mémoire (`rho_memory_max`)
 
 4. Vectorisation algébrique et BLAS (`rho_fabulous`)
 ]
@@ -1528,14 +1536,14 @@ for (int i = 0; i < totalStates; ++i) {
 
 ---
 
-# IV.3.1 - Mémoïsation et Partitionnement (`rho_memory_max`)
+# IV.3.1 - Mémorïsation et Partitionnement (`rho_memory_max`)
 
 Pour éliminer **100 % des recalculs** de fonctions de base et **100 % des tests inutiles** sur `$m$` :
 
 .row[
 .column.w45[
 .block[
-### 1. Mémoïsation (`func`)
+### 1. Mémorïsation (`func`)
 On précalcule `basisFunc` une unique fois pour chaque état `$i$`, et on stocke les matrices dans `std::vector<arma::mat> func`.
 * **Coût d'accès** : `$O(1)$` en lecture.
 ]
@@ -1719,23 +1727,97 @@ En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Arma
 
 
 .vcenter.large[
-1. Wrapper python
-2. Résultats et benchmarks
-3. Outils de profilage
+1. Résultats
+2. Benchmark
+3. Profilage
 ]
-
----
-
-# Résultats
-
-## 1. Wrapper python
 
 ---
 
 # Résultats 
 
-1. Wrapper python
-## 2. Résultats et benchmarks
+## 1. résultats
+
+---
+
+# V.1 - Résultats Visuels : Les Coupes 2D
+
+.block[
+### Comparaison des profils de densité
+Voici les coupes transversales physiques obtenues via le wrapper C++ et tracées sous Python, mettant en évidence les différentes étapes d'optimisation.
+]
+
+.row[
+.column.w45[
+.hcenter[![](images/density_naif_2D.png)]
+.hcenter.small[`rho_naif` (Référence - 1.0x)]
+]
+
+.column.w10[
+&nbsp;
+]
+
+.column.w45[
+.hcenter[![](images/density_linearized_2D.png)]
+.hcenter.small[`rho_linearized` (~ [X]x plus rapide)]
+]
+]
+
+---
+
+# V.1 - Résultats Visuels : Mémorïsation & BLAS
+
+.block[
+### Des performances accrus sans perte de précision
+]
+
+.row[
+.column.w45[
+.hcenter[![](images/density_memory_max_2D.png)]
+.hcenter.small[`rho_memory_max` (~ [Y]x plus rapide)]
+]
+
+.column.w10[
+&nbsp;
+]
+
+.column.w45[
+.hcenter[![](images/density_fabulous_2D.png)]
+.hcenter.small[`rho_fabulous` (> [Y]x plus rapide)]
+]
+]
+
+---
+
+# V.1 - Validation Numérique : Écarts vs Naïf
+
+.block[
+### Cartes de différence ($\Delta\rho$)
+Vérification que les optimisations ne modifient pas la physique ($\Delta\rho = \text{Optimisé} - \text{Naïf}$). *(Note : le cas linéarisé, identique à zéro, sera commenté à l'oral).*
+]
+
+.row[
+.column.w50[
+.hcenter[<img src="images/diff_memory_max_vs_naif.png" width="90%">]
+.hcenter.small[`memory_max` vs `naif` (~ [Y]x)]
+]
+
+.column.w50[
+.hcenter[<img src="images/diff_fabulous_vs_naif.png" width="90%">]
+.hcenter.small[`fabulous` vs `naif` (~ [Y]x)]
+]
+]
+
+.alert.hcenter[
+Erreurs limitées aux bruits d'arrondis machine ($\approx 10^{-15}$).
+]
+
+---
+
+# Résultats 
+
+1. Résultats
+## 2. Benchmarks
 
 ---
 
@@ -1750,7 +1832,7 @@ En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Arma
 
 | Algorithme | Temps (s/res.) | Accélération |
 |:---|:---:|:---:|
-| Naïf | 0.128661 | 1x |
+| **Naïf** | **0.128661** | **1x** |
 | Kroenecker | 0.015215 | x8.46 |
 | Factorized | 0.007923 | x16.24 |
 | Linearized | 0.008247 | x15.60 |
@@ -1758,8 +1840,8 @@ En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Arma
 | Optimized | 0.007940 | x16.20 |
 | Symmetric | 0.004247 | x30.29 |
 | Sym. Opti. | 0.004266 | x30.16 |
-| Memory max | 0.000180 | x714.78 |
-| Fabulous | 0.000242 | x531.66 |
+| **Memory max** | **0.000180** | **x714.78** |
+| **Fabulous** | **0.000242** | **x531.66** |
 | Ultimate | 0.000212 | x606.89 |
 
 .block[Temps d'execution : 5.970814 s]
@@ -1775,7 +1857,7 @@ En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Arma
 
 | Algorithme | Temps (s/res.) | Accélération |
 |:---|:---:|:---:|
-| Naïf | 0.496243 | 1x |
+| **Naïf** | **0.496243** | **1x** |
 | Kroenecker | 0.057893 | x8.57 |
 | Factorized | 0.031446 | x15.78 |
 | Linearized | 0.031412 | x15.80 |
@@ -1783,8 +1865,8 @@ En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Arma
 | Optimized | 0.031739 | x15.64 |
 | Symmetric | 0.017871 | x27.77 |
 | Sym. Opti. | 0.017863 | x27.78 |
-| Memory max | 0.003696 | x134.26 |
-| Fabulous | 0.010398 | x47.72 |
+| **Memory max** | **0.003696** | **x134.26** |
+| **Fabulous** | **0.010398** | **x47.72** |
 | Ultimate | 0.008173 | x60.72 |
 
 
@@ -1794,17 +1876,41 @@ En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Arma
 
 ---
 
+# V.2. - Benchmark final
+
+.block[
+`nb_warmup = 10`, 
+`nb_iter = 60`,
+`nbR=100`,
+`nbZ=100`
+]
+.w50.hcenter[
+| Algorithme | Temps (s/res.) | Accélération |
+|:---|:---:|:---:|
+| **Naïf** | **2.114799** | **1x** |
+| Kroenecker | 0.250359 | x8.45 |
+| Factorized | 0.154771 | x13.66 |
+| Linearized | 0.154739 | x13.67 |
+| Linearized 2. | 0.249960 | x8.46 |
+| Optimized | 0.154670 | x13.67 |
+| Symmetric | 0.097446 | x21.70 |
+| Sym. Opti. | 0.097073 | x21.79 |
+| **Memory max** | 0.047831 | **x44.21** |
+| **Fabulous** | 0.034142 | **x61.94** |
+| Ultimate | 0.013065 | x161.87 |
+]
+
+---
+
 # Résultats 
 
-1. Wrapper python
-2. Résultats et benchmarks
-## 3. Outils de profilage
+1. Résultats
+2. Benchmarks
+## 3. Profilage
 
 ---
 
 # V.3. - Gestion mémoire
-
-
 
 ```sh
 make debug
@@ -1832,6 +1938,92 @@ valgrind ./exec
 ```gnome-terminal
 
 ```
+
+---
+
+# V.3 - Perf
+
+```sh
+make perf
+```
+
+Dans le `Makefile`
+
+```Makefile
+perf: OPTIONS := $(OPTIONS_COMMON) -O0 -g -fno-omit-frame-pointer
+perf: $(main_exec)
+	perf record -F 999 -g ./$(main_exec) $(ARGS)
+	perf report --no-children --stdio 2>/dev/null | head -50
+```
+
+---
+
+# VI. Retex & Gestion de projet : Leçons apprises
+
+.hcenter.vcenter.large[
+1. Documentation : Le piège de l'évidence à chaud
+2. Planification : La sous-estimation de la charge
+3. Architecture & Git : L'enfer des conflits de mergememoïsation
+4. Soutenance : Le piège du sprint final
+]
+
+---
+
+# VI.1 - Documentation : Le piège de l'évidence à chaud
+
+.block[
+### Le constat
+- **Le piège du "c'est évident"** : Sur le moment, la logique de notre code nous paraissait tellement limpide qu'on n'a pas pris le temps de la commenter ni de documenter nos choix.
+- **Le réveil difficile** : Dix jours plus tard, face à notre propre code, c'était le néant total. On a perdu un temps précieux à ré-analyser notre propre logique.
+]
+
+.alert.hcenter[
+**Leçon apprise :** Ce qui est évident aujourd'hui ne l'est plus du tout deux semaines après. Commenter à chaud est un gain de temps, pas une perte.
+]
+
+---
+
+# VI.2 - Planification : Cartographier la charge de travail
+
+.block[
+### Une vision initiale trop optimiste
+- **Manque de visibilité** : On a foncé tête baissée dans le code sans prendre assez de temps en amont pour lister exhaustivement toutes les tâches et évaluer leur volume réel.
+- **Conséquence directe** : Du retard accumulé rapidement, car la complexité de certaines briques techniques a été sous-estimée.
+]
+
+.block[
+### Ce qu'on aurait dû faire
+- Poser les bases plus sérieusement lors de la première semaine : découpage précis des tâches, priorisation et jalons réalistes.
+]
+
+---
+
+# VI.3 - Architecture & Git : L'enfer des merges
+
+.block[
+### Quand l'imprécision technique plombe l'organisation
+- **Des structures instables** : Des choix de conception encore flous nous ont poussés à modifier les structures de données principales à plusieurs reprises, chacun de notre côté.
+- **Le cauchemar Git** : Travailler sur des branches séparées avec des structures mouvantes a rendu les `git merge` extrêmement laborieux et sources de conflits permanents.
+]
+
+.alert.hcenter[
+**Leçon apprise :** Figer les interfaces et les structures de données en équipe *avant* de coder en parallèle sur des branches distinctes.
+]
+
+---
+
+# VI.4 - Rédaction : Éviter le rush de fin de projet
+
+.block[
+### Le syndrome du sprint final
+- **Le constat** : On a concentré 100% de nos efforts sur le code, en repoussant la création de la présentation au tout dernier moment.
+- **La difficulté** : Résumer et structurer plusieurs semaines de travail dans l'urgence de la dernière semaine génère un stress évitable.
+]
+
+.block[
+### La bonne pratique pour la suite
+- Produire le diaporama **au fil de l'eau** : noter les difficultés surmontées et intégrer les schémas d'architecture dès qu'une partie est validée.
+]
 
     </textarea>
 
