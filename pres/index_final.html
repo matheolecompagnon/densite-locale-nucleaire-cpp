@@ -356,7 +356,7 @@ Racine
 
 ---
 
-# II.4. - Makefile
+# II.4.1 - Makefile
 
 .block[
 ### Arborescence
@@ -370,7 +370,7 @@ Le `Makefile` automatise la compilation, l'exécution et les tests avec quatre c
 
 ---
 
-# V.2 Variables et options de compilation
+# II.4.2 Makefile -  Variables et options de compilation
 
 ```makefile
 CXX        := g++
@@ -405,7 +405,7 @@ test_exec    := bin/test
 
 ---
 
-# V.3 Programme principal
+# II.4.3 Makefile -  Programme principal
 
 ```makefile
 .PHONY: all debug release run test clean
@@ -437,7 +437,7 @@ $(CXX) $(OPTIONS) $^ -o $@ $(LDLIBS)
 
 ---
 
-# V.4 Tests unitaires (CxxTest)
+# II.4.4 Makefile -  Tests unitaires (CxxTest)
 
 ```makefile
 # ---------- Tests unitaires (CxxTest) ----------
@@ -466,7 +466,7 @@ $(CXXTESTGEN) --error-printer -o $@ $(test_headers)
 
 ---
 
-# V.5 Compilation des sources et nettoyage
+# II.4.5 Makefile -  Compilation des sources et nettoyage
 
 ```makefile
 # ---------- Compilation des sources ----------
