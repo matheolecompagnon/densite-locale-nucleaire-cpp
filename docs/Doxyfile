@@ -68,7 +68,7 @@ TAB_SIZE               = 4
 
 ALIASES                =
 
-OPTIMIZE_OUTPUT_FOR_C  = YES
+OPTIMIZE_OUTPUT_FOR_C  = NO
 
 OPTIMIZE_OUTPUT_JAVA   = NO
 
@@ -82,7 +82,7 @@ EXTENSION_MAPPING      =
 
 MARKDOWN_SUPPORT       = YES
 
-MARKDOWN_STRICT        = YES
+MARKDOWN_STRICT        = NO
 
 TOC_INCLUDE_HEADINGS   = 6
 
@@ -120,13 +120,13 @@ TIMESTAMP              = NO
 
 EXTRACT_ALL            = YES
 
-EXTRACT_PRIVATE        = NO
+EXTRACT_PRIVATE        = YES
 
-EXTRACT_PRIV_VIRTUAL   = NO
+EXTRACT_PRIV_VIRTUAL   = YES
 
 EXTRACT_PACKAGE        = NO
 
-EXTRACT_STATIC         = NO
+EXTRACT_STATIC         = YES
 
 EXTRACT_LOCAL_CLASSES  = YES
 
@@ -230,7 +230,7 @@ WARN_LINE_FORMAT       = "at line $line of file $file"
 
 WARN_LOGFILE           =
 
-INPUT                  = ../src ../tests/ ../headers/ mainpage.md
+INPUT                  = ../src ../tests/ ../include/ mainpage.md ../rho.arma ../tests_wrapper.py ../generation.py
 
 INPUT_ENCODING         = UTF-8
 
@@ -323,7 +323,7 @@ SOURCE_BROWSER         = YES
 
 INLINE_SOURCES         = NO
 
-STRIP_CODE_COMMENTS    = YES
+STRIP_CODE_COMMENTS    = NO
 
 REFERENCED_BY_RELATION = NO
 

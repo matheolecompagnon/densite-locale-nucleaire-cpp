@@ -33,10 +33,10 @@ Les fonctions de base sont aussi accessibles depuis Python grâce au wrapper (`i
 ```
 .
 ├── Makefile
-├── bench.txt       # Résultat du benchmark sur 100 itérations
 ├── rho.arma        # Matrice rho du projet
 ├── test_wrapper.py # Test du wrapper
 ├── include/        # Headers (.h)
+├── doc/            # Documentation Doxygen
 ├── src/            # Sources : main.cpp, basis.cpp, poly.cpp, simulation.cpp, bench.cpp, wrapper.cpp
 ├── tests/          # Tests CxxTest : test_basis.h, test_mandatory.h, test_poly.h
 ├── bin/            # Objets, dépendances (.d) et exécutable de test (généré)
@@ -52,6 +52,8 @@ Les fonctions de base sont aussi accessibles depuis Python grâce au wrapper (`i
 | **Armadillo** | Algèbre linéaire (`-larmadillo`) | Oui |
 | **CxxTest** | Tests unitaires (`cxxtestgen`) | Pour `make test` |
 | Python 3 + headers de dev | Compilation du wrapper (`python3-config`) | Pour le wrapper |
+
+Perf est aussi requis pour utiliser `make perf ARGS=...`
 
 ### Installation
 
@@ -75,6 +77,16 @@ make run        # Compile (si nécessaire) et lance ./exec avec les options cour
 make test       # Génère, compile et exécute les tests CxxTest (en debug)
 make bench      # Compile en release avec -DBENCH puis lance le programme
 make clean      # Supprime bin/ et l'exécutable exec
+make perf ARGS=fabulous # Lance l'analyse de Perf sur l'algorithme fabulous
+```
+
+## Documentation
+
+Pour compiler la documentation :
+
+```sh
+cd doc
+doxygen Doxyfile
 ```
 
 ## Tests
@@ -114,18 +126,25 @@ Cette commande compile avec `-DBENCH` et exécute le programme principal. Chaque
 
 ### Résultats
 
+* **Nombre de préchauffes (Warmup) :** 10 itérations
+* **Nombre de mesures :** 60 itérations
+* **nbR** : 100
+* **nbZ** : 100
+
 | Algorithme    | Temps (s/res.) | Gain vs Naïf |
 |:--------------|---------------:|-------------:|
-| Naïf          | 2.643643       | x1.0         |
-| Kroenecker    | 0.668905       | x4.0         |
-| Factorized    | 0.539542       | x4.9         |
-| Linearized    | 0.538897       | x4.9         |
-| Linearized 2. | 0.669147       | x4.0         |
-| Optimized     | 0.539421       | x4.9         |
-| Symmetric     | 0.343141       | x7.7         |
-| Sym. Opti.    | 0.342538       | x7.7         |
-| Memory max    | 0.271028       | x9.8         |
-| **Fabulous**  | **0.038582**   | **x68.5**    |
+| Naïf          |       2.114799 |         x1.0 |
+| Kroenecker    |       0.250359 |         x8.4 |
+| Factorized    |       0.154771 |        x13.7 |
+| Linearized    |       0.154739 |        x13.7 |
+| Linearized 2. |       0.249960 |         x8.5 |
+| Optimized     |       0.154670 |        x13.7 |
+| Symmetric     |       0.097446 |        x21.7 |
+| Sym. Opti.    |       0.097073 |        x21.8 |
+| Memory max    |       0.047831 |        x44.2 |
+| Fabulous      |       0.034142 |        x61.9 |
+| **Ultimate**  |   **0.013065** |   **x161.9** |
+
 
 Durée totale du benchmark : environ 739 s.
 
