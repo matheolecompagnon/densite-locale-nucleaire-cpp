@@ -24,15 +24,11 @@ Modélisation de la densité nucléaire
 ]
 
 .subtitle[
-J.M. Assogba - M. Glessmer - M. Lecompagnon - ENSIIE - 2026
+J-M. Assogba - M. Glessmer - M. Lecompagnon - ENSIIE - 2026
 ]
 
 .row[
 `$$\rho(\mathbf{r}) \equiv \sum_a \sum_b \rho_{ab}\psi_a(\mathbf{r})\psi^*_b(\mathbf{r})$$`
-]
-
-.footnote[
-[:book: Instructions du projet](../index.html)
 ]
 
 ???
@@ -44,12 +40,252 @@ layout: true
 class: animated fadeIn middle numbers
 
 .footnote[
-Presentation template - N. Dubray - ENSIIE - 2026 - [:book:](../index.html)
+Presentation - J.M. Assogba - M. Glessmer - M. Lecompagnon - ENSIIE - 2026
 ]
 
 ---
 
-# Organisation du projet
+# Une simulation scientifique
+
+Pendant ce projet, on a dû simuler la **densité locale** d'un système nucléaire.
+Elle représente la probabilité de trouver une particule à une position spécifique
+
+<br>
+
+Le but était de la calculer puis de l'afficher.
+
+<br>
+
+## Exemple de représentation d'une telle simulation
+
+.hcenter.shadow.w50[![](images/density.png)]
+
+---
+
+# Sommaire
+
+.row[
+.column.w50.hcenter[
+<ol class="toc" style="list-style-type: upper-roman; padding-left: 20px; padding-top: 30px; text-align: left;">
+  <li><strong>Théorie</strong>
+    <ol style="list-style-type: decimal; padding-left: 20px;">
+      <li>Densité locale et base</li>
+      <li>Polynômes d'Hermite et de Laguerre</li>
+      <li>Troncation de la base</li>
+    </ol>
+  </li>
+  <br>
+  <li><strong>Gestion du projet</strong>
+    <ol style="list-style-type: decimal; padding-left: 20px;">
+      <li>Choix des outils utilisés</li>
+      <li>Répartition du travail</li>
+      <li>Arborescence du projet</li>
+      <li>Makefile</li>
+    </ol>
+  </li>
+  <br>
+  <li><strong>Implémentation des classes principales</strong>
+    <ol style="list-style-type: decimal; padding-left: 20px;">
+      <li>Les différentes interfaces</li>
+      <li>Implémentation des polynômes</li>
+      <li>Implémentation de la troncature</li>
+      <li>Implémentation de la base</li>
+    </ol>
+  </li>
+</ol>
+]
+
+.column.w50.hcenter[
+<ol class="toc" start="4" style="list-style-type: upper-roman; padding-left: 20px; padding-top: 30px; text-align: left;">
+  <li><strong>Implémentation de la densité</strong>
+    <ol style="list-style-type: decimal; padding-left: 20px;">
+      <li>Méthode naïve</li>
+      <li>Optimisation</li>
+    </ol>
+  </li>
+  <br>
+  <li><strong>Résultats</strong>
+    <ol style="list-style-type: decimal; padding-left: 20px;">
+      <li>Résultats</li>
+      <li>Benchmarks</li>
+      <li>Profilage</li>
+    </ol>
+  </li>
+  <li><strong>Gestion de Projet</strong>
+    <ol style="list-style-type: decimal; padding-left: 20px;">
+      <li>Documentation</li>
+      <li>Planification</li>
+      <li>Architecture</li>
+      <li>Soutenance</li>
+    </ol>
+  </li>
+</ol>
+]
+]
+
+
+---
+
+# I. Théorie
+
+.hcenter.vcenter.large[
+1. Densité locale et base
+
+2. Polynômes d'Hermite et de Laguerre
+
+3. Troncation de la base
+]
+
+---
+
+# I.1. - Densité nucléaire locale `$\rho(r)$`
+
+Le projet a pour but de modéliser la densité nucléaire locale définie par
+
+`$$
+\rho(\mathbf{r})
+\equiv
+\sum_{a,b} \rho_{ab}\psi_a(\mathbf{r})\psi^*_b(\mathbf{r})
+=
+\sum_{{m_a, n_a, n_{za}} \atop {m_b,n_b,n_{zb}}}\rho_{m_a, n_a, n_{za}, m_b,n_b,n_{zb}}\psi_{m_a,n_a,n_{za}}(\mathbf{r})\psi^*_{m_b,n_b,n_{zb}}(\mathbf{r})
+$$`
+
+.alert[
+Soit `$(r_\perp, \theta, z)$` les coordonnées cylindriques, `$(m, n, n_z)$` les nombres quantiques (entiers positifs ou nuls) et `$b_\perp, b_z$` les paramètres de déformation de la base. On définit
+
+`$$
+\psi_{m,n,n_z}(r_\perp, \theta, z) \equiv Z(z, n_z)\,.\,R(r_\perp, m, n)\,.\,e^{im\theta}
+$$`
+]
+
+.row[
+.column.w30[
+## Partie axiale
+]
+`$$
+Z(z, n_z) \equiv \frac{1}{\sqrt{b_z}}
+\frac{1}{\sqrt{2^{n_z} \sqrt{\pi}n_z!}}
+e^{-\frac{z^2}{2b_z^2}}H_{n_z}\left(\frac{z}{b_z}\right)
+$$`
+]
+.row[
+.column.w30[
+## Partie radiale
+]
+`$$
+R(r_\perp, m, n) \equiv \frac{1}{b_{\perp}\sqrt{\pi}}
+\sqrt{\frac{n!}{(n+|m|)!}}
+e^{-\frac{r_{\perp}^2}{2b_{\perp}^2}}
+\left(\frac{r_{\perp}}{b_{\perp}}\right)^{|m|}
+L_n^{|m|}\left(\frac{r_{\perp}^2}{b_{\perp}^2}\right)
+$$`
+]
+
+
+Comme `$\rho_{ab}=\delta_{m_a,m_b}\rho_{ab}$`,
+
+<br>
+
+.block.w80.hcenter[
+Alors on utilisera la simplification :  `$\psi_{m,n,n_z}(r_\perp, \theta, z) \equiv Z(z, n_z)\,.\,R(r_\perp, m, n)
+$`
+]
+
+---
+
+# I.2. - Polynômes : Hermite et Laguerre
+
+Soit `$n \in \mathbb{N}$` le degré, `$m \in \mathbb{N}$` le paramètre de Laguerre, et `$\zeta, \eta$` les points d'évaluation.
+
+.row[
+.column.w50[
+## Hermite
+`$$
+\begin{aligned}
+H_0(\zeta)&=1\\
+H_1(\zeta)&=2\zeta\\
+H_{n}(\zeta)&=2\zeta H_{n-1}(\zeta)-2(n-1)H_{n-2}(\zeta)
+\end{aligned}
+$$`
+]
+.column.w50[
+## Laguerre généralisés
+`$$
+\begin{aligned}
+L^{m}_0(\eta)&=1\\
+L^{m}_1(\eta)&=1+m-\eta\\
+L^{m}_{n}(\eta)&=\left(2+\frac{m-1-\eta}{n}\right)L^{m}_{n-1}(\eta)\\
+&\quad-\left(1+\frac{m-1}{n}\right)L^{m}_{n-2}(\eta)
+\end{aligned}
+$$`
+]
+]
+
+Définitions par récurrence
+
+---
+
+# I.3. - Troncation de la base
+
+Soit `$N\in \mathbb{N}^+$` et `$Q\in \mathbb{R}^+$` les paramètres de troncation. On pose
+
+`$$
+\nu(i) \equiv (N+2).Q^\frac{2}{3}+\frac{1}{2}-i.Q
+\qquad
+m^\textrm{max} \equiv \textrm{sup}\left\{i:\nu(i)\ge 1\right\}
+$$`
+
+Les nombres quantiques sont alors bornés par
+
+`$$
+\begin{alignedat}{4}
+0 & \le &&m  & \lt & \textrm{ mMax} \equiv m^\textrm{max}\\
+0 & \le &&n  & \lt & \textrm{ nMax[m]} \equiv \frac{1}{2}(m^\textrm{max}-m-1) + 1\\
+0 & \le &&n_z& \lt & \textrm{ n\_zMax[m, n]} \equiv \nu(m+2n+1)
+\end{alignedat}
+$$`
+
+---
+
+# II. - Gestion du projet
+
+.hcenter.vcenter.large[
+1. Choix des outils utilisés
+
+2. Répartition du travail
+
+3. Arborescence du projet
+
+4. Makefile
+]
+
+---
+
+# II.1. Outils utilisés
+
+.block[
+### Développement
+- **Git** : Gestion des versions et travail à trois
+- **Makefile** : compilation, exécution et tests automatisés
+- **Armadillo** : bibliothèque C++ d'algèbre linéaire (vecteurs, matrices)
+]
+
+.block[
+### Qualité et analyse
+- **CxxTest** : tests unitaires ; `cxxtestgen` génère le programme de test à partir des fichiers `tests/*.h`
+- **Doxygen** : documentation générée à partir des commentaires du code
+- **perf** et **Valgrind** : profilage (temps d'exécution, mémoire)
+]
+
+.block[
+### Présentation
+- **remark.js** : Utilisé pour les la mise en place des slides
+]
+
+---
+
+class: top
+# II.2. - Répartition du travail
 
 .mermaid.shadow[
     graph LR
@@ -60,383 +296,1916 @@ Presentation template - N. Dubray - ENSIIE - 2026 - [:book:](../index.html)
     E("Week #5<br/>Wrapper et<br/> optimisation") --> F("Week #6<br/>Presentation")
 ]
 
-* `remark.js` is a simple HTML5 + javascript presentation tool.
+------------------------------------------------
 
-  :arrow_right: to view your presentation, you only need a web browser (even offline).
+<br>
 
-* the presentation description is written in **markdown** in the source file.
+|      Nom     |  Lancement                                              | Interfaces  | Tests     | Implémentation |
+|:-------------|:--------------------------------------------------------|:------------|:----------|:---------------|
+| M. Glessmer  | Gitlab, Makefile                                           | Truncation  | Poly      | Truncation  |
+| J-M. Assogba | Tests Armadillo                                            | Poly        | Basis     | Basis       |
+| M. Lecompa.  | Arborescence, <br>Documentation,<br> Création des fichiers | Basis       | Makefile, Mandatory | Poly        |
 
-  :arrow_right: the markdown code for this slide starts like this:
-
-```markdown
-# `remark.js` ??? WTF ?
-
-* `remark.js` is a simple HTML5 + javascript presentation tool.
-
-  :arrow_right: to view your presentation, you only need a web browser (even offline).
-
-
-
-```
-
-* some extensions allow to include code, `$\LaTeX$`, tables, diagrams, emojis...
-
+|        Nom      | Algorithme et wrapper   | Resultats |Présentation                                 |
+|:-------------|:------------------------|:----------|:-----------------------------------|
+| M. Glessmer  | Fait                 | Visualisation  | Diapo Optimisation, algorithmes et conclusion |
+| J.M. Assogba | X                    | Correction code | Diapo outils, Makefile, Basis                      |
+| M. Lecompa.  | X                    | Benchmark et profilage | Structure fond et forme, tout le reste                      |
+ 
 ---
 
-# :warning: important remark for firefox users
+class: top
+# II.3. - Arborescence du projet
 
-Browsing a **local** `remark.js` presentation and some content does not work (asciinema...) ?
-
-1. go to *`about:config`*,
-
-2. search for the *`origin_policy`* pattern,
-
-3. set the property *`security.fileuri.strict_origin_policy`* to *`false`*.
-
-.hcenter.shadow.w80.animated.fadeInUp.wait1s[
-![](images/firefox_config.png)
+.mermaid.shadow[
+    graph LR
+    A("Week #1<br/>Initialisation") --> B
+    B("Week #2<br/>Tests Armadillo et<br/> structure du projet") --> C
+    C("Week #3<br/>Interfaces<br/> et tests") --> D
+    D("Week #4<br/>Implémentations") --> E
+    E("Week #5<br/>Wrapper et<br/> optimisation") --> F("Week #6<br/>Presentation")
 ]
 
+------------------------------------------------
+
+<br>
+
+.row[
+.alert.tree.hcenter[
+Racine
+* bin
+* docs
+* pres
+* README.md
+* **Makefile**
+* include
+  * **basis.hpp**
+  * **poly.hpp**
+  * simulation.hpp
+  * bench.hpp
+
+]
+
+.alert.tree.hcenter[
+* src
+  * basis.cpp
+  * main.cpp
+  * poly.cpp
+  * simulation.cpp
+  * wrapper.cpp
+  * bench.cpp
+* tests
+  * test_basis.h
+  * test_mandatory.h
+  * test_poly.h
+  * tests.cpp
+]
+]
 
 ---
 
-class: toc top
-# Example of a table of content
+# II.4.1 - Makefile
 
-1. First section
---
+.block[
+### Arborescence
+- `include/` : en-têtes (`basis.hpp`, `poly.hpp`, ...)
+- `src/` : sources (`basis.cpp`, `poly.cpp`, `main.cpp`)
+- `tests/` : tests unitaires CxxTest (`test_basis.h`, `test_poly.h`, `test_mandatory.h`)
+- `bin/` : fichiers générés (`.o`, `.d`), créé automatiquement
+]
 
-  1. First subsection
---
-
-  2. Second subsection
---
-
-2. Second section
-  * First subsection
---
-
-2. Third section
-  1. First subsection
+Le `Makefile` automatise la compilation, l'exécution et les tests avec quatre commandes : `make`, `make release`, `make test`, `make clean`.
 
 ---
 
-# :clipboard: Example of table
+# II.4.2 Makefile -  Variables et options de compilation
 
-## A table
+```makefile
+CXX        := g++
+CXXTESTGEN := cxxtestgen
+
+OPTIONS_COMMON  := -Wall -Wextra -Werror -Iinclude
+OPTIONS_DEBUG   := $(OPTIONS_COMMON) -g -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer
+OPTIONS_RELEASE := $(OPTIONS_COMMON) -O2
+DEPFLAGS        := -MMD -MP
+LDLIBS          := -larmadillo
+
+# Options par défaut (surchargées par les cibles debug, release et test)
+OPTIONS := $(OPTIONS_DEBUG)
+
+files   := basis poly
+objects := $(files:%=bin/%.o)
+
+main_exec    := exec
+test_headers := tests/test_basis.h tests/test_mandatory.h tests/test_poly.h
+test_cpp     := bin/tests.cpp
+test_obj     := bin/tests.o
+test_exec    := bin/test
+```
+
+.block[
+- **Commun** : tous les warnings sont activés et traités comme des erreurs (`-Werror`).
+- **Debug** : symboles pour le débogage.
+- **Release** : l'option `-O2` pour l'optimisation.
+- `DEPFLAGS` génère les fichiers `.d` qui listent les en-têtes dont dépend chaque `.o`.
+- `LDLIBS` lie la bibliothèque Armadillo.
+]
+
+---
+
+# II.4.3 Makefile -  Programme principal
+
+```makefile
+.PHONY: all debug release run test clean
+
+all: debug
+
+debug: OPTIONS := $(OPTIONS_DEBUG)
+debug: run
+
+release: OPTIONS := $(OPTIONS_RELEASE)
+release: run
+
+# ---------- Programme principal ----------
+run: $(main_exec)
+@printf "\n\n========== Debut Affichage Programme ==========\n\n"
+@./$(main_exec)
+@printf "\n\n========== Fin Affichage Programme ==========\n\n"
+
+$(main_exec): src/main.cpp $(objects)
+$(CXX) $(OPTIONS) $^ -o $@ $(LDLIBS)
+```
+
+.block[
+- `make` (ou `make debug`) compile en mode debug puis lance le programme.
+- `make release` fait de même en mode optimisé.
+- `debug` et `release` redéfinissent `OPTIONS` pour cette cible et ses dépendances.
+- L'exécutable `exec` est obtenu en liant `main.cpp` et les objets `basis.o` et `poly.o`.
+]
+
+---
+
+# II.4.4 Makefile -  Tests unitaires (CxxTest)
+
+```makefile
+# ---------- Tests unitaires (CxxTest) ----------
+test: OPTIONS := $(OPTIONS_DEBUG)
+test: $(test_exec)
+@printf "\n\n========== Execution de la Suite de Tests ==========\n\n"
+@./$(test_exec)
+@printf "\n\n====================================================\n\n"
+
+$(test_exec): $(test_obj) $(objects)
+$(CXX) $(OPTIONS) $^ -o $@ $(LDLIBS)
+
+$(test_obj): $(test_cpp)
+$(CXX) $(OPTIONS) -c $< -o $@
+
+$(test_cpp): $(test_headers) | bin
+$(CXXTESTGEN) --error-printer -o $@ $(test_headers)
+```
+
+.block[
+`make test` enchaîne trois étapes :
+1. `cxxtestgen` génère `bin/tests.cpp` à partir des trois fichiers de tests.
+2. Ce fichier est compilé en `bin/tests.o`.
+3. Il est lié aux objets du projet pour produire `bin/test`, qui est exécuté.
+]
+
+---
+
+# II.4.5 Makefile -  Compilation des sources et nettoyage
+
+```makefile
+# ---------- Compilation des sources ----------
+bin/%.o: src/%.cpp | bin
+$(CXX) $(OPTIONS) $(DEPFLAGS) -c $< -o $@
+
+bin:
+    mkdir -p $@
+
+# Recompile automatiquement si un header change (fichiers .d générés par -MMD)
+-include $(objects:.o=.d)
+
+clean:
+    rm -rf bin $(main_exec)
+```
+
+.block[
+- La règle `bin/%.o: src/%.cpp` compile chaque source en objet.
+- `| bin` :  le dossier est créé s'il manque, mais ne force pas la recompilation.
+- `-include` charge les fichiers `.d` : si un en-tête change, les `.o` concernés sont recompilés.
+- `make clean` supprime `bin/` et l'exécutable.
+]
+
+---
+
+# III. Implémentation des classes principales
+
+.large[
+1. Les différentes interfaces
+
+2. Implémentation des polynômes
+
+3. Implémentation de la troncature
+
+4. Implémentation de la base
+]
+
+---
+
+# III. Implémentation des classes principales
+
+## 1. Les différentes interfaces
+
+---
+
+# III.1. - Polynômes : implémentation (classe `Poly`)
+
+.block[
+`n` : degré, <br>
+`m` : paramètre de Laguerre, <br>
+`vect` : points d'évaluation, <br>
+`coefficients` : matrice où sont stockés les résultats
+]
+
 .hcenter[
-| Points                  | `git` | `doxygen` | `VTK` | `python` | `gdb` | `MPI` | `$\LaTeX$` | `LAPACK` |
-|:------------------------|:-----:|:---------:|:-----:|:--------:|:-----:|:-----:|:------------:|:--------:|
-| *0*. What ?             |       |           |       |          |       |       |              |          |
-| *1*. I tried it once... |       |           |       |          |       |       |              |          |
-| *2*. I use it.          |       |           |  :+:  |          |  :+:  |       |              |          |
-| *3*. I love it !        |  :+:  |    :+:    |       |   :+:    |       |  :+:  |      :+:     |    :+:   |
+| Fonction                                         | Interface                                                   |
+|:-------------------------------------------------|:------------------------------------------------------------|
+| Calcul des `$H_k$` pour `$k < n$`                | `void calcHermite(int n, const arma::vec& vect)`            |
+| `$H_n$` évalué en `vect`                         | `arma::vec hermite(int n)`                                  |
+| Calcul des `$L^{j}_{k}$` pour `$j < m$, $k < n$` | `void calcLaguerre(int m, int n, const arma::vec& vect)`    |
+| `$L^m_n$` évalué en `vect`                       | `arma::vec laguerre(int m, int n)`                          |
 ]
-
-.hcenter[Centered caption]
-
-## Some math
-`$$\int_0^\infty f(x)e^{-x} dx \simeq \sum_{i=0}^{n-1}w_if(x_i)$$`
 
 ---
 
-# How to show a terminal capture or some code ?
+# III.1. - Polynômes : Mandatory test
 
-* Show a colored terminal capture with `gnome-terminal` "copy as HTML":
-
-<pre><code><font color="#FFFFFF">[</font><font color="#FFFD00">dubrayn</font><font color="#FFFFFF">@</font><font color="#23FD00">dell5290</font><font color="#FFFFFF">:</font><font color="#14FFFF">~</font><font color="#FFFFFF">]</font> <font color="#19CB00">duf</font>
-╭────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ 3 local devices                                                                                    │
-├────────────────────────┬────────┬────────┬─────────────────────┬──────────┬────────────────────────┤
-│ MOUNTED ON    │   SIZE │   USED │  AVAIL │         USE%        │ TYPE     │ FILESYSTEM             │
-├───────────────┼────────┼────────┼────────┼─────────────────────┼──────────┼────────────────────────┤
-│ <font color="#71BEF2">/</font>             │ 466.9G │ 347.8G │  <font color="#A8CC8C">95.3G</font> │ <font color="#DBAB79">[#######...]  74.5%</font> │ <font color="#B9BFCA">ext4</font>     │ <font color="#B9BFCA">/dev/ubuntu--vg/root</font>   │
-│ <font color="#71BEF2">/boot/efi</font>     │ 511.0M │   6.1M │ <font color="#E88388">504.9M</font> │ <font color="#A8CC8C">[..........]   1.2%</font> │ <font color="#B9BFCA">vfat</font>     │ <font color="#B9BFCA">/dev/nvme0n1p1</font>         │
-│ <font color="#71BEF2">/home/dubrayn</font> │ 466.9G │ 347.8G │  <font color="#A8CC8C">95.3G</font> │ <font color="#DBAB79">[#######...]  74.5%</font> │ <font color="#B9BFCA">ecryptfs</font> │ <font color="#B9BFCA">/home/dubrayn/.Private</font> │
-╰───────────────┴────────┴────────┴────────┴─────────────────────┴──────────┴────────────────────────╯
-╭──────────────────────────────────────────────────────────────────────────────────────╮
-│ 3 special devices                                                                    │
-├────────────────┬──────┬────────┬───────┬─────────────────────┬──────────┬────────────┤
-│ MOUNTED ON     │ SIZE │   USED │ AVAIL │         USE%        │ TYPE     │ FILESYSTEM │
-├────────────────┼──────┼────────┼───────┼─────────────────────┼──────────┼────────────┤
-│ <font color="#71BEF2">/dev</font>           │ 7.7G │     0B │  <font color="#DBAB79">7.7G</font> │                     │ <font color="#B9BFCA">devtmpfs</font> │ <font color="#B9BFCA">udev</font>       │
-│ <font color="#71BEF2">/run</font>           │ 1.5G │   2.3M │  <font color="#DBAB79">1.5G</font> │ <font color="#A8CC8C">[..........]   0.1%</font> │ <font color="#B9BFCA">tmpfs</font>    │ <font color="#B9BFCA">tmpfs</font>      │
-│ <font color="#71BEF2">/run/lock</font>      │ 5.0M │   4.0K │  <font color="#E88388">5.0M</font> │ <font color="#A8CC8C">[..........]   0.1%</font> │ <font color="#B9BFCA">tmpfs</font>    │ <font color="#B9BFCA">tmpfs</font>      │
-╰────────────────┴──────┴────────┴───────┴─────────────────────┴──────────┴────────────╯
-</code></pre>
-
-* Show some code with syntax highlighting:
-
-```python
-import sys
-
-print("Hello !")
+```cpp
+void testMandatory0(void)
+    {
+        Poly poly;
+        arma::vec zVals, calcVals, targetVals;
+        zVals = {-3.1, -2.3, -1.0, -0.3, 0.1, 4.3, 9.2, 13.7};
+        poly.calcHermite(6, zVals); // compute Hermite polynomials for n in {0 ... 5}
+        calcVals   = poly.hermite(4); // n = 4
+        targetVals = {  1.02835360e+03,  2.05825600e+02, -2.00000000e+01,  7.80960000e+00,
+                        1.15216000e+01,  4.59456160e+03,  1.10572154e+05,  5.54643458e+05};
+        TS_ASSERT_DELTA(arma::norm(calcVals / targetVals - 1.0), 0.0, 1e-08);
+        calcVals   = poly.hermite(5); // n = 5
+        targetVals = { -4.76676832e+03, -3.88909760e+02,  8.00000000e+00, -3.17577600e+01,
+                        1.18403200e+01,  3.48375818e+04,  1.98557479e+06,  1.50339793e+07};
+        TS_ASSERT_DELTA(arma::norm(calcVals / targetVals - 1.0), 0.0, 1e-08);
+        zVals = {0.1, 0.3, 1.2, 1.8, 2.0, 2.5, 7.1, 11.1};
+        poly.calcLaguerre(6, 4, zVals); // compute generalized Laguerre polynomials for m in {0 ... 5} and n in {0 ... 3}
+        calcVals   = poly.laguerre(4, 2); // m = 4, n = 2
+        targetVals = {  14.405,  13.245,  8.52 ,  5.82 ,  5.,  3.125,  -2.395,  10.005};
+        TS_ASSERT_DELTA(arma::norm(calcVals / targetVals - 1.0), 0.0, 1e-08);
+        calcVals   = poly.laguerre(5, 3); // m = 5, n = 3
+        targetVals = { 53.23983333,  47.95550000,  27.87200000,  17.5880,
+                    14.66666667,   8.39583333,  -0.81183333,  10.1015};
+        TS_ASSERT_DELTA(arma::norm(calcVals / targetVals - 1.0), 0.0, 1e-08);
+    }
 ```
 
 ---
 
-class: middle
-# Example of an `asciinema` capture
+# III.1. - Polynômes : test Hermite
+
+```cpp
+   void testHermite(){
+      arma::vec evaluatingPoints = {-1.3737, 0.4167, -3.2845, 2.4175, 1.1056};
+      Poly poly;
+      poly.calcHermite(6, evaluatingPoints);
+
+      // H0
+      arma::vec result_h0 = {1.0, 1.0, 1.0, 1.0, 1.0};
+      arma::vec computed_h0 = poly.hermite(0);
+      TS_ASSERT_DELTA(arma::norm(result_h0 - computed_h0), 0.0, 1e-08);
+
+      // H1
+      arma::vec result_h1 = {-2.7474, 0.8334, -6.569, 4.835, 2.2112};
+      arma::vec computed_h1 = poly.hermite(1);
+      TS_ASSERT_DELTA(arma::norm(result_h1 - computed_h1), 0.0, 1e-08);
+
+      // H2
+      arma::vec result_h2 = {5.548206759999999, -1.30544444, 41.151761, 21.377225, 2.889405439999999};
+      arma::vec computed_h2 = poly.hermite(2);
+      TS_ASSERT_DELTA(arma::norm(result_h2 - computed_h2), 0.0, 1e-08);
+
+      // H3
+      arma::vec result_h3 = {-4.253543252423999, -4.421557396296, -244.049918009, 84.01888287499999, -2.455746691072002};
+      arma::vec computed_h3 = poly.hermite(3);
+      TS_ASSERT_DELTA(arma::norm(result_h3 - computed_h3), 0.0, 1e-08);
+
+      // H4
+      arma::vec result_h4 = {-21.6030558282903, 4.147740705926914, 1356.2533454011211, 277.96794870062496, -22.766579723298406};
+      arma::vec computed_h4 = poly.hermite(4);
+      TS_ASSERT_DELTA(arma::norm(result_h4 - computed_h4), 0.0, 1e-08);
+
+      // H5
+      arma::vec result_h5 = {93.38058160203676, 38.829186274687494, -6956.828881867965, 671.8239689675219, -30.695487555581416};
+      arma::vec computed_h5 = poly.hermite(5);
+      TS_ASSERT_DELTA(arma::norm(result_h5 - computed_h5), 0.0, 1e-08);
+   }
+```
+
+---
+
+# III.1. - Polynômes : test Laguerre
+
+```cpp
+ void testLaguerre(){
+
+      // Troncature de la base : m varie de 0 à 5 (mMax = 6) et n < nMax[m]
+      const int mMax = 6;
+      const int nMaxGlobal = (mMax - 1) / 2 + 1; // nMax[0], le plus grand des nMax[m]
+
+      arma::vec evaluatingPoints = {-1.3737, 0.4167, -3.2845, 2.4175, 1.1056};
+
+      Poly poly;
+      poly.calcLaguerre(mMax, nMaxGlobal, evaluatingPoints);
+
+      // m = 0, n = 0
+      arma::vec result_l_m0_n0 = {1.0, 1.0, 1.0, 1.0, 1.0};
+      arma::vec computed_l_m0_n0 = poly.laguerre(0, 0);
+      TS_ASSERT_DELTA(arma::norm(result_l_m0_n0 - computed_l_m0_n0), 0.0, 1e-08);
+
+      // m = 0, n = 1
+      arma::vec result_l_m0_n1 = {2.3737, 0.5832999999999999, 4.2844999999999995, -1.4175, -0.10559999999999992};
+      arma::vec computed_l_m0_n1 = poly.laguerre(0, 1);
+      TS_ASSERT_DELTA(arma::norm(result_l_m0_n1 - computed_l_m0_n1), 0.0, 1e-08);
+
+      // m = 0, n = 2
+      arma::vec result_l_m0_n2 = {4.690925845, 0.25341944499999997, 12.962970125, -0.9128468750000001, -0.6000243199999999};
+      arma::vec computed_l_m0_n2 = poly.laguerre(0, 2);
+      TS_ASSERT_DELTA(arma::norm(result_l_m0_n2 - computed_l_m0_n2), 0.0, 1e-08);
+
+      // m = 1, n = 0 ...
+      // m = 1, n = 1 ...
+      // m = 1, n = 2 ...
+      // m = 2, n = 0 ...
+      // m = 2, n = 1 ...
+      // m = 3, n = 0 ...
+      // m = 3, n = 1 ...
+      // m = 4, n = 0 ...
+      // m = 5, n = 0 ...
+   }
+```
+
+---
+
+# III.1. - Base : implémentation (classe `Basis`)
+
+.block[
+`br`, `bz` : paramètres de déformation, <br>
+`N`, `Q` : paramètres de troncation,
+<br> `r`, `z` : points d'évaluation, 
+<br>`m`, `n`, `n_z` : nombres quantiques
+]
 
 .hcenter[
-<asciinema-player src="scripts/example.cast"></asciinema-player>
+| Fonction                         | Interface                                                              |
+|:---------------------------------|:-----------------------------------------------------------------------|
+| Constructeur                     | `Basis(double br, double bz, int N, double Q)`                         |
+| `$R(r_\perp, m, n)$`             | `arma::vec rPart(arma::vec r, int m, int n)`                           |
+| `$Z(z, n_z)$`                    | `arma::vec zPart(arma::vec z, int n)`                                  |
+| `$\psi_{m,n,n_z}$`               | `arma::mat basisFunc(int m, int n, int n_z, arma::vec z, arma::vec r)` |
 ]
 
-:arrow_right: record your shell sessions with
+---
 
-```shell
-$ asciinema rec
+# III.1. - Troncation : implémentation
+
+.block[
+`N`, `Q` : paramètres de troncation, <br>
+`m_max` : valeur renvoyée par `m_max`, <br>
+`m`, `n` : nombres quantiques
+]
+
+.hcenter[
+| Fonction                                | Interface                                       |
+|:----------------------------------------|:------------------------------------------------|
+| `$m^\textrm{max}$`                      | `int m_max(int N, double Q)`                    |
+| `$nMax[m]$`                               | `double n_max(int m_max, int m)`                |
+| `$n_zMax[m, n]$`                          | `double nz_max(int m, int n, int N, double Q)`     |
+| Résultats stockés dans `Basis`          | `int mMax`, `arma::ivec nMax`, `arma::imat n_zMax` |
+]
+
+
+---
+
+# III.1. - Base : Mandatory test
+
+```cpp
+void testMandatory1(void)
+    {
+        // Mandatory test #01 - Basis truncation
+
+        //     br = 1.935801664793151, bz = 2.829683956491218, N = 14, Q = 1.3
+        Basis basis(1.935801664793151,      2.829683956491218,     14,     1.3);
+        TS_ASSERT_EQUALS(basis.mMax, 14);
+        arma::ivec nMax = {7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1};
+        TS_ASSERT((basis.nMax - nMax).is_zero());
+        arma::imat n_zMax = {{18, 15, 13, 10, 7, 5, 2}, 
+                            {16, 14, 11,  9, 6, 3, 1}, 
+                            {15, 13, 10,  7, 5, 2, 0}, 
+                            {14, 11,  9,  6, 3, 1, 0}, 
+                            {13, 10,  7,  5, 2, 0, 0}, 
+                            {11,  9,  6,  3, 1, 0, 0}, 
+                            {10,  7,  5,  2, 0, 0, 0}, 
+                            { 9,  6,  3,  1, 0, 0, 0}, 
+                            { 7,  5,  2,  0, 0, 0, 0}, 
+                            { 6,  3,  1,  0, 0, 0, 0}, 
+                            { 5,  2,  0,  0, 0, 0, 0}, 
+                            { 3,  1,  0,  0, 0, 0, 0}, 
+                            { 2,  0,  0,  0, 0, 0, 0}, 
+                            { 1,  0,  0,  0, 0, 0, 0}};
+        // check if matrices are equal
+        TS_ASSERT((basis.n_zMax - n_zMax).is_zero());
+    }
 ```
 
 ---
 
-# Want to include some emojis ? :joy:
+# III.1. - Base : Mandatory test
 
-**Yes you can** :exclamation: :smile: :grinning: :trollface:
+```cpp
+void testMandatory2(void)
+    {
+        // Mandatory test #02 - Basis r-functions
 
-:arrow_right: It is quite easy ! :+1:
+        //     br = 1.935801664793151, bz = 2.829683956491218, N = 14, Q = 1.3
+        Basis basis(1.935801664793151,      2.829683956491218,     14,     1.3);
+        arma::vec r = {3.1, 2.3, 1.0, 0.0, 0.1, 4.3, 9.2, 13.7};
+        arma::vec res00 = { 8.08521235111303e-02,
+                            1.43887615825118e-01,
+                            2.55045100912706e-01,
+                            2.91450097294984e-01,
+                            2.91061479407116e-01,
+                            2.47240792330589e-02,
+                            3.63004153921473e-06,
+                            3.87659726026123e-12};
+        TS_ASSERT_DELTA(arma::norm(basis.rPart(r, 0, 0) - res00), 0.0, 1e-15);
+        arma::vec res82 = { 5.87858442372438e-02,
+                            1.35240488413384e-02,
+                            4.06810074575519e-05,
+                            0.00000000000000e+00,
+                            4.92817669085478e-13,
+                            8.52011998934850e-02,
+                            5.20525909328609e-02,
+                            1.44615166152252e-05};
+        TS_ASSERT_DELTA(arma::norm(basis.rPart(r, 8, 2) - res82), 0.0, 1e-15);
 
-Try not to over-use it :blue_heart: :star2: :musical_note: :v: :panda_face: :cool: !
+
+    }
+```
 
 ---
 
-# Want to include some math ? (`$a=\frac{\sqrt{b^2}}{c}$`)
+# III.1. - Base : Mandatory test
 
-You can include some **inline math** like **`$\sum_aw_a=4$`**, or centered equations like
-`$$\sum_k\frac{1}{k^2}=\frac{\pi^2}{6}.$$`
-Let us suppose that
-`$$M\equiv\left[\begin{array}{ccc}1&0&0\\0&0&1\\0&1&0\end{array}\right],$$`
-one can check that
-`$$M \neq M^tM.$$`
+```cpp
+void testMandatory3(void)
+    {
+        // Mandatory test #03 - Basis z-functions
 
-----
+        //     br = 1.935801664793151, bz = 2.829683956491218, N = 14, Q = 1.3
+        Basis basis(1.935801664793151,      2.829683956491218,     14,     1.3);
+        arma::vec z = {-10.1, -8.4, -1.0, 0.0, 0.1, 4.3, 9.2, 13.7};
+        arma::vec res00 = { 7.64546544834383e-04,
+                            5.44886272162148e-03,
+                            4.19492564268520e-01,
+                            4.46522724110539e-01,
+                            4.46243982300708e-01,
+                            1.40736821086932e-01,
+                            2.26186220733178e-03,
+                            3.62929640195959e-06};
+        TS_ASSERT_DELTA(arma::norm(basis.zPart(z, 0) - res00), 0.0, 1e-15);
+        arma::vec res15 = {-9.48674551049192e-02,
+                        -1.40338701953237e-03,
+                            1.85620628040096e-01,
+                        -0.00000000000000e+00,
+                        -3.93028470685214e-02,
+                        -1.79526868763440e-01,
+                            2.15604096600475e-01,
+                            2.44977220882127e-01};
+        TS_ASSERT_DELTA(arma::norm(basis.zPart(z, 15) - res15), 0.0, 1e-15);
+    }
+```
 
-Final expression for `$a(x)$`:
-`$$a(x) = \frac{A_0}{1 + x^2}+O\left(x^{-3}\right).$$`
+---
+
+# III.1. - Base : tests
+
+```cpp
+void test_rPart_en_etat_fondamental_a_l_origine(){
+      Basis basis(2,0,0,0);
+      arma::vec r = arma::zeros<arma::vec>(8);
+      arma::vec res = arma::ones<arma::vec>(8);
+      res = 0.2821 * res;
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 0 ,0 ) - res ),0.0,  1e-15) ;
+   }
+```
+
+```cpp
+void test_rPart_en_etat_fondamental_partout(){
+      Basis basis(2,0,0,0);
+      arma::vec r = {3.1, 2.3, 1.0, 0.0, 0.1, 4.3, 9.2, 13.7};
+      arma::vec res = {8.4859e-02, 1.4562e-01, 2.4895e-01, 2.8209e-01, 2.8174e-01, 2.7966e-02, 7.1707e-06, 1.8252e-11};
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 0 ,0 ) - res ),0.0,  1e-15) ;
+   }
+```
+
+```cpp
+void test_rPart_en_partout_pour_n_et_m_different_de_0(){
+      Basis basis(2,0,0,0);
+      arma::vec r = {9.1, 6.3, 1.0, 4.0, 0.1, 0.3, 9.2, 13.7};
+      arma::vec res = {-0.0683 0.0097, 0.1276, 0.0738, 0.0023, 0.0196, -0.0684, -0.0001};
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 2 ,5 ) - res ),0.0,  1e-15) ;
+   }
+```
+
+```cpp
+void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_br(){
+      Basis basis(2,0,0,0);
+      TS_ASSERT_EQUALS(basis.br , 2);
+}
+```
+
+```cpp
+void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_bz(){
+      Basis basis(2,5,0,0);
+      TS_ASSERT_EQUALS(basis.bz , 5);
+}
+```
+
+```cpp
+void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_N(){
+      Basis basis(2,5,3,0);
+      TS_ASSERT_EQUALS(basis.N , 3);
+}
+```
+
+---
+
+# III.1. - Base : tests
+
+```cpp
+void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_N(){
+      Basis basis(2,5,3,0);
+      TS_ASSERT_EQUALS(basis.N , 3);
+}
+```
+
+```cpp
+void test_le_constructeur_Basis_affecte_bien_sa_valeur_au_parametre_Q(){
+      Basis basis(2,5,3,4);
+      TS_ASSERT_EQUALS(basis.Q , 4);
+}
+```
+
+```cpp
+void test_zPart_en_etat_fondamental_a_l_origine(){
+      Basis basis(0,2.5,0,0);
+      arma::vec z = arma::zeros<arma::vec>(8);
+      arma::vec res = arma::ones<arma::vec>(8);
+      res = 0.4751 * res;
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 0 ) - res ), 0.0,  1e-15) ;
+}
+```
+
+```cpp
+void test_zPart_en_etat_fondamental_partout(){
+      Basis basis(2,2.5 ,0,0);
+      arma::vec z = {-4.5, -2.1, 0.0, 1.5, 3.8, 10.2, 2 ,1};
+      arma::vec res = { 0.0940, 0.3338, 0.4751, 0.3968, 0.1496, 0.0001, 0.3450, 0.4385};
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 0 ) - res ),0.0,  1e-15) ;
+   }
+```
+
+```cpp
+void test_zPart_en_partout_pour_nz_different_de_0(){
+      Basis basis(2,2.5,0,0);
+      arma::vec z = {-4.5, -2.1, 0.0, 1.5, 3.8, 10.2, 2 ,1};
+      arma::vec res = {0.1706, -0.1042, 0, 0.2557, -0.2894, 0.0480, 0.1368, 0.2695};
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 5 ) - res ),0.0,  1e-15) ;
+   }
+```
+
+---
+
+# III.1. - Base : tests
+
+```cpp
+void test_sur_la_valeur_calculee_de_mMax(){
+      Basis basis(1 , 1,  12 , 1.2) ; 
+      int mMax_res = 12;
+      TS_ASSERT_EQUALS(basis.mMax , mMax_res) ;
+}
+```
+
+```cpp
+void test_sur_le_vecteur_nMax_calculee(){
+      Basis basis(1 , 1,  11 , 1.2) ;
+      arma::ivec nMax_res = {6 ,5 ,5 ,4, 4, 3, 3, 2, 2, 1, 1};
+      TS_ASSERT((basis.nMax - nMax_res).iszero());      
+   }
+```
+
+```cpp
+void test_sur_le_matrice_n_zMax_calculee(){
+      Basis basis(1 , 1,  10 , 1.2);
+      arma::imat n_zMax_res = {
+        {12, 10, 8,  5,  3},
+        {11, 9,  6,  4,  2},
+        {10, 8,  5,  3,  0},
+        {9,  6,  4,  2,  0},
+        {8,  5,  3,  0,  0},
+        {6,  4,  2,  0,  0},
+        {5,  3,  0,  0,  0},
+        {4,  2,  0,  0,  0},
+        {3,  0,  0,  0,  0},
+        {2,  0,  0,  0,  0}
+      };
+      TS_ASSERT((basis.n_zMax - n_zMax_res).iszero());      
+   }
+```
+
+---
+
+# III.1. - Base : tests
+
+```cpp
+void test_basisfunc() {
+      Basis basis(2 , 2.5,  0 , 0) ;
+      arma::vec r = {9.1, 6.3, 1.0, 4.0, 0.1, 0.3};
+      arma::vec z = {-4.5, -2.1, 0.0, 1.5, 3.8 };
+      arma::vec res_r = {0.0037, 0.0807, 0.1639, -0.0441, 0.0243, 0.0708};
+      arma::vec res_z = {-0.3400, 0.2572, 0.0, -0.3134, 0.2128};
+
+      arma::mat res_basis = {
+         {-0.0012, -0.0274, -0.0557, 0.0150, -0.0083, -0.0241},
+         {0.0009, 0.0208, 0.0422, -0.0113, 0.0063, 0.0182},
+         {0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000},
+         {-0.0012, -0.0253, -0.0514, 0.0138, -0.0076, -0.0222},
+         {0.0008, 0.0172, 0.0349, -0.0094, 0.0052, 0.0151}
+      };
+
+      TS_ASSERT_DELTA(arma::norm(basis.rPart(r , 1 ,2 ) - res_r ),0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.zPart(z , 3 ) - res_z ),0.0,  1e-15) ;
+      TS_ASSERT_DELTA(arma::norm(basis.basisFunc(1 , 2 , 3 , z , r ) - res_basis ),0.0,  1e-15) ;
+   }
+```
+
+---
+
+# III. Implémentation des classes principales
+
+1. Les différentes interfaces
+## 2. Implémentation des polynômes
 
 ---
 
 class: top
-# Want some item lists ?
+# III.2. - `Poly::calcHermite` : calcul des polynômes d'Hermite
 
-A simple item list :
-* first element
-* second element
-* third element
-* last element
+<br>
 
-A simple *enumerated* list (with pauses between items):
-1. :melon: melon
---
+Calculer les polynômes d'Hermite de 0 à `n_` appliqués au vecteur `vect`.
 
-1. :apple: apple
---
+<br>
 
-1. :banana: banana
---
-
-1. :grapes: grapes
-
-Take a look at the markdown source to see that an exact numbering is not needed :
+```cpp
+void Poly::calcHermite(int n_, const arma::vec& vect)
+{
+    n = n_;
+    m = 0;
+    coefficients.zeros(vect.n_elem, n_);
+    for (int i=0; i<n_; i++)
+    {
+        if (i==0)      coefficients.col(0).ones();
+        else if (i==1) coefficients.col(1) = 2 * vect;
+        else           coefficients.col(i) = (2 * vect) % coefficients.col(i-1)
+                                           - (2 * (i-1)) * coefficients.col(i-2);
+    }
+}
 ```
-1. :melon: melon
 --
 
-1. :apple: apple
+<br>
+
+.alert[
+Méthode :
+Chaque colonne `i` correspond à un polynôme $H_i$ déjà évalué.
+
+- Etape `i` : on réutilise les colonnes précédentes `i-1`, `i-2` pour calculer la prochaine valeur
+]
+
 --
 
-1. :banana: banana
+<br>
+
+.block[
+:arrow_right: Armadillo prend en compte les opérations sur les colonnes
+]
+
 --
 
-1. :grapes: grapes
+<br>
 
-```
+.hcenter[Permet d'éviter la saturation de la pile d'appels récursif en travaillant en place.]
 
 ---
 
-# Some tables / blocks ?
+# III.2. - Initialisation : `coefficients.zeros(p, n_)`
+
+```cpp
+coefficients.zeros(vect.n_elem, n_);
+```
+
+<br>
 
 .hcenter[
-| Example table           | `git` | `doxygen` | `VTK` | `python` | `gdb` | `MPI` | `$\LaTeX$` | `LAPACK` |
-|:------------------------|:-----:|:---------:|:-----:|:--------:|:-----:|:-----:|:------------:|:--------:|
-| *0*. What ?             |       |           |       |          |       |       |              |          |
-| *1*. I tried it once... |       |           |       |          |       |       |              |          |
-| *2*. I use it.          |       |           |  :+:  |          |  :+:  |       |              |          |
-| *3*. I love it !        |  :+:  |    :+:    |       |   :+:    |       |  :+:  |      :+:     |    :+:   |
+| | `$H_0$` | `$H_1$` | `$H_2$` | `...` | `$H_k$` | `...` | `$H_{n-1}$` |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `$v_1$` | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `$v_2$` | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `...` | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `$v_p$` | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 ]
 
-.hcenter[This is a serious table.]
-.block[ Some text in a box, with some math: `$$a=b$$` ]
-some text
-.alert[ Some important text in a box, with some math: `$$\pi \simeq 3.1415926535$$` ]
+<br>
+
+.hcenter.alert.w40[Tout est à zéro avant d'entrer dans la boucle.]
 
 ---
 
-class: middle
+# III.2. - Itération `i = 0`
 
-# A chart with `mermaid.js`
+```cpp
+coefficients.col(0).ones();     // H_0 = 1
+```
 
-.mermaid[
-    sequenceDiagram
-        Alice->>+Bob: git clone
-        Bob-->>-Alice: cloning
-        Carol->>+Bob: git clone
-        Bob-->>-Carol: cloning
-				Note over Alice: commits
-				Note over Carol: commits
-				Alice->>+Bob: git push
-        Bob-->>-Alice: new HEAD
-				Carol->>+Bob: git push
-        Bob-->>-Carol: not OK
-]
-
----
-
-# Highlight some text / include images
-
-.noflex[
-.rightf.w20[
- ![](images/wikipedia_logo.png)
-]
-
-## Scientific method
-1. Define a question
-2. Gather information and resources (observe)
-3. Form an explanatory hypothesis
-4. Test the hypothesis by *performing an experiment* and collecting data in a **reproducible manner**
-5. Analyze the data
-6. Interpret the data and draw conclusions that serve as a starting point for new hypothesis
-7. **Publish results**
-8. Retest (frequently done **by other scientists**)
-]
-
----
-
-# How can I insert images ?
-
-.noflex[
-Use **`![](image.png)`**
-
-## Some justified text wrapping around a floating image:
-
-Lorem ipsum morbi taciti id adipiscing sed magna integer arcu eros nibh tortor interdum ultricies senectus accumsan, lacus suscipit a cursus pretium pellentesque est arcu blandit duis vivamus condimentum rhoncus molestie.
-
-.block.rightf.w20.animated.fadeInRight.wait1s[ ![](images/wikipedia_logo.png).hcenter[Wikipedia logo] ]
-
-Fames quisque volutpat lacus cursus semper varius erat habitant, luctus litora sed pulvinar himenaeos quis sit, vel fermentum taciti posuere fusce quisque tincidunt ut congue aliquam eget.
-
-.block.leftf.w30.animated.fadeInLeft.wait1s[
-Some text in a floating box... `$$\sum_i \hat{\pi}\left[u_i^2\right]=1$$`
-]
-
-`$$a=1+2+3+4+5+6+\ldots$$`
-Fames quisque volutpat lacus cursus semper varius erat habitant, luctus litora sed pulvinar himenaeos quis sit, vel fermentum taciti posuere fusce quisque tincidunt ut congue aliquam eget.
-Fames quisque volutpat lacus cursus semper varius erat habitant, luctus litora sed pulvinar himenaeos quis sit, vel fermentum taciti posuere fusce quisque tincidunt ut congue aliquam eget.
-Fames quisque volutpat lacus cursus semper varius erat habitant, luctus litora sed pulvinar himenaeos quis sit, vel fermentum taciti posuere fusce quisque tincidunt ut congue aliquam eget.
-]
-
----
-
-class: middle
-# Animate ?
-
-Yes, you can animate things.
-
-.block.animated.fadeInRight[
-* Here is a sliding *block of text*.
-* On two lines.
-]
-
-.animated.wait1s.fadeIn[Some text fading in...]
-
-.alert.animated.wait2s.fadeInLeft[Another block :v:
-`$$\int_0^1 x^2 dx = \left[ \frac{x^3}{3} \right]_0^1 $$`]
-
-.animated.wait3s.fadeIn[and...]
-
-.hcenter.block.animated.wait4s.fadeInUp[Some final text with some math :panda_face: !!! `$$a=b$$`]
-
----
-
-# some `git` graphs
+<br>
 
 .row[
+.column.w70[
+.hcenter[
+| | `$H_0$` | `$H_1$` | `$H_2$` | `...` | `$H_k$` | `...` | `$H_{n-1}$` |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `$v_1$` | **1** | 0 | 0 | 0 | 0 | 0 | 0 |
+| `$v_2$` | **1** | 0 | 0 | 0 | 0 | 0 | 0 |
+| `...` | **1** | 0 | 0 | 0 | 0 | 0 | 0 |
+| `$v_p$` | **1** | 0 | 0 | 0 | 0 | 0 | 0 |
+]
+]
+
 .column.w30[
-This is a serious `git` graph made with `gitgraph.js`.
+$H_0(X)=1$
 ]
-.column.w65[
-<canvas id='gitExample0'></canvas>
-]
+
 ]
 
 ---
 
-class: hcenter, middle
-# Include a video
+# III.2. -  Itération `i = 1`
 
-<video controls="yes" preload="auto" width="100%" height="auto" data-setup="{}" loop>
-<source src="videos/toto.webm" type="video/webm" />
-</video>
+```cpp
+coefficients.col(1) = 2 * vect;     // H_1 = 2X
+```
 
----
+<br>
 
-# Include a tree
+.row[
+.column.w70[
 
-A tree ? really ?
-.alert.tree.hcenter[
-This
-* is a
-    * **tree**
-* like
-    * no
-        * other
+.hcenter[
+| | `$H_0$` | `$H_1$` | `$H_2$` | `...` | `$H_k$` | `...` | `$H_{n-1}$` |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `$v_1$` | 1 | **`$2v_1$`** | 0 | 0 | 0 | 0 | 0 |
+| `$v_2$` | 1 | **`$2v_2$`** | 0 | 0 | 0 | 0 | 0 |
+| `...` | 1 | **`...`** | 0 | 0 | 0 | 0 | 0 |
+| `$v_p$` | 1 | **`$2v_p$`** | 0 | 0 | 0 | 0 | 0 |
+]
+]
+.column.w30[
+$H_1(X)=2X$
+]
 ]
 
 ---
 
-# Plot with `Bokeh.js`
+# III.2. - Itération générale `i = k` (`k >= 2`)
 
-<div id='bokeh00' class='hcenter'></div>
+```cpp
+coefficients.col(k) = (2 * vect) % coefficients.col(k-1) - (2 * (k-1)) * coefficients.col(k-2);
+```
+
+<br>
+
+.hcenter[
+| | `$H_0$` | `...` | `$H_{k-2}$` | `$H_{k-1}$` | `$H_k$` | `...` | `$H_{n-1}$` |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `$v_1$` | 1 | `...` | `$H_{k-2}(v_1)$` | `$H_{k-1}(v_1)$` | **`$2v_1H_{k-1}(v_1)-2(k-1)H_{k-2}(v_1)$`** | 0 | 0 |
+| `$v_2$` | 1 | `...` | `$H_{k-2}(v_2)$` | `$H_{k-1}(v_2)$` | **`$2v_2H_{k-1}(v_2)-2(k-1)H_{k-2}(v_2)$`** | 0 | 0 |
+| `...` | 1 | `...` | `...` | `...` | **`...`** | 0 | 0 |
+| `$v_p$` | 1 | `...` | `$H_{k-2}(v_p)$` | `$H_{k-1}(v_p)$` | **`$2v_pH_{k-1}(v_p)-2(k-1)H_{k-2}(v_p)$`** | 0 | 0 |
+]
+
+<br>
+
+.hcenter[ `$$
+H_{k}(X)=2XH_{k-1}(X)-2(k-1)H_{k-2}(X)
+$$` ]
+
+--
+
+<br>
+
+.block.animated.fadeInUp[
+:arrow_right: `%` : produit **terme à terme** d'Armadillo (`$v_j \times H_1(v_j)$` ligne par ligne)
+]
 
 ---
 
-# Another plot with `Bokeh.js`
+# III.2. - Dernière itération `i = n-1`
 
-<div id='bokeh01' class='hcenter'></div>
-
----
-
-# Plot with `Plotly.js`
-
-<div id='plotly00' class='hcenter shadow'></div>
-<div id='plotly01' class='hcenter shadow'></div>
-
-???
-
-:warning: BUG: due to a `scale()` rule in the CSS of `remark.js`, mouse coordinates in the plots are wrong.
+.hcenter[
+| | `$H_0$` | `$H_1$` | `$H_2$` | `...` | `$H_{n-2}$` | `$H_{n-1}$` |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `$v_1$` | 1 | `$2v_1$` | `$4v_1^2-2$` | `...` | `$H_{n-2}(v_1)$` | **`$H_{n-1}(v_1)$`** |
+| `$v_2$` | 1 | `$2v_2$` | `$4v_2^2-2$` | `...` | `$H_{n-2}(v_2)$` | **`$H_{n-1}(v_2)$`** |
+| `...` | 1 | `...` | `...` | `...` | `...` | **`...`** |
+| `$v_p$` | 1 | `$2v_p$` | `$4v_p^2-2$` | `...` | `$H_{n-2}(v_p)$` | **`$H_{n-1}(v_p)$`** |
+]
 
 ---
 
-# Include `VTK` pipelines with [`vtk.js`](https://kitware.github.io/vtk-js/)
+# III.2. - `Poly::hermite` : Récupérer l'évaluation
 
-<iframe src="./vtk00.html" width="100%" height="500px"></iframe>
+```cpp
+arma::vec Poly::hermite(int n_)
+{
+    return evaluated_value.col(n_);
+}
+```
+
+<br>
+
+.hcenter[
+| | `$H_0$` | `$H_1$` | `$H_2$` | `...` | `$H_{n\_-2}$` | `$H_{n\_}$` |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `$v_1$` | 1 | `$2v_1$` | `$4v_1^2-2$` | `...` | `$H_{n\_-2}(v_1)$` | **`$H_{n\_}(v_1)$`** |
+| `$v_2$` | 1 | `$2v_2$` | `$4v_2^2-2$` | `...` | `$H_{n\_-2}(v_2)$` | **`$H_{n\_}(v_2)$`** |
+| `...` | 1 | `...` | `...` | `...` | `...` | **`...`** |
+| `$v_p$` | 1 | `$2v_p$` | `$4v_p^2-2$` | `...` | `$H_{n\_-2}(v_p)$` | **`$H_{n\_}(v_p)$`** |
+]
+
+<br>
+
+.alert.animated.fadeInRight[
+ :warning: Attention ! Il faut avoir préalablement appelé `calcHermite(n_+1)` 
+]
 
 ---
 
-class: hcenter, middle
-# Conclusion
+class:top
 
-**That's all folks !**
+# III.2. - `Poly::calcLaguerre` : polynômes de Laguerre
 
-Start playing with this by simply editing the source file.
+<br>
 
-Did you try the presentation mode (by pressing **p**) ?
+Calculer les polynômes de Laguerre de rang 0 à `n_` et de paramètre de Laguerre 0 à `m_` appliqués au vecteur `vect`.
 
-You can also get some help by pressing **h**.
 
-???
+```cpp
+void Poly::calcLaguerre(int m_, int n_, const arma::vec& vect)
+{
+    n = n_;
+    m = m_;
+    coefficients.zeros(vect.n_elem, m_ * n_);
 
-Holy :cow: !!! I can put notes on my slides !?!
+    for (int i=0; i<n_; i++)
+    {
+        for (int j=0; j<m_; j++)
+        {
+            if (i==0)
+            {
+                coefficients.col(m_ * i + j).ones();
+                
+            }
+            else if (i==1)
+            {
+                coefficients.col(m_ * i + j) = 1 + j - vect;
+            }
+            else 
+            {
+                coefficients.col(m_ * i + j) += (2*i - 1 + j - vect) 
+                % coefficients.col(m_ * (i-1) + j);
+
+                coefficients.col(m_ * i + j) -= (i + j - 1) 
+                * coefficients.col(m_ * (i-2) + j);
+
+                coefficients.col(m_ * i + j) /= (double)(i);
+            }
+        }
+    }
+}
+```
+
+---
+
+# III.2. - Forme de `coefficients` pour `Poly::calcLaguerre`
+
+```cpp
+coefficients.zeros(vect.n_elem, m_ * n_);   // colonne (i, j) = m_ * i + j
+```
+
+<br>
+
+Même méthode d'évaluation que pour Hermite. $L_i^m$ donne une relation de récurrence en $i$ sur deux rangs pour tout $m$.
+
+<br>
+
+.hcenter[
+| | `$L_{0}^{0}$` | `$L_{0}^{1}$` | `...` | `$L_{0}^{m\_-1}$` | `$L_{1}^{0}$` | `$L_{1}^{1}$` | `...` | `$L_{1}^{m\_-1}$` | `...` | `$L_{n\_-1}^{0}$` | `...` | `$L_{n\_-1}^{m\_-1}$` |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `$v_1$` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `$v_2$` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `...` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `$v_p$` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+]
+
+<br>
+
+--
+
+.alert.animated.fadeInUp[
+`$n\_$` **blocs** de `$m\_$` colonnes : `$i$` (degré) change de bloc, `$j$` varie à l'intérieur d'un bloc.
+]
+
+---
+
+# III. Implémentation des classes principales
+
+1. Les différentes interfaces
+2. Implémentation des polynômes
+## 3. Implémentation de la troncature
+
+---
+
+# III.3. - Implémentation de la troncature
+
+.block[
+### Définition des paramètres
+Soit `$N \in \mathbb{N}^+$` et `$Q \in \mathbb{R}^+$` les paramètres de troncature. On pose :
+
+`$$\nu(i) \equiv (N + 2)Q^{\frac{2}{3}} + \frac{1}{2} - iQ$$`
+
+`$$m^{\text{max}} \equiv \sup \{ i : \nu(i) \ge 1 \}$$`
+]
+
+Les nombres quantiques sont alors bornés par :
+
+- `$0 \le m < m^{\text{max}}$`
+- `$0 \le n < \frac{1}{2}(m^{\text{max}} - m - 1) + 1$`
+- `$0 \le n_z < \nu(m + 2n + 1)$`
+
+---
+
+# III.3. - Implémentation de la troncature (suite)
+
+.block[
+### Traduction algorithmique en C++
+Le calcul de `$m^{\text{max}}$` nécessite de traduire le supremum par une boucle, tandis que les autres bornes s'évaluent par application directe des formules.
+]
+
+```cpp
+// nu(0) = (N+2) Q^(2/3) + 1/2, puis on décrémente de Q à chaque pas
+int m_max(int N, double Q){
+    int m_max = 0;
+    double q_pow = pow(q, 2.0/3.0);
+    double nu = ((double)(N + 2))*(q_pow) + 1.0/2.0
+    while(nu < 1) {
+        m_max++;
+        nu - Q;
+    }
+    return m_max;
+}
+
+double n_max(int m_max, int m) {return 1.0/2.0*(double)(m_max - m + 1)}
+
+// Borne pour n_z : evaluation directe de nu(m + 2n + 1)
+double nz_max(int m, int n, int N, double Q) {
+    int i = m +2*n + 1;
+    double q_pow = pow(Q,2.0/3.0);
+    return q_pow - ((double)i) * Q;
+}
+```
+
+---
+
+# III. Implémentation des classes principales
+
+1. Les différentes interfaces
+2. Implémentation des polynômes
+3. Implémentation de la troncature
+## 4. Implémentation de la base
+
+---
+
+# III.4 - Basis : Structure de la classe Basis (`basis.hpp`)
+
+.block[
+### Rôle de la classe
+La classe `Basis` génère les fonctions d'onde spatiales en coordonnées cylindriques sur une grille `$z \times r$`.
+]
+
+- **Paramètres de déformation et de troncature** :
+  - `$b_r$`, `$b_z$` : paramètres d'échelle selon `$r$` et `$z$`.
+  - `$N$`, `$Q$` : paramètres régissant la taille de la base.
+
+- **Bornes précalculées** :
+  - `int mMax` : borne pour le nombre quantique `$m$`.
+  - `arma::ivec nMax` : borne pour `$n$`, pour chaque `$m$`.
+  - `arma::imat n_zMax` : borne pour `$n_z$`, pour chaque `$(m, n)$`.
+
+---
+
+# III.4 - Basis : Constructeur (`basis.cpp`)
+
+.block[
+### Initialisation des bornes quantiques
+`mMax` est calculé en premier, puis `nMax(m)`, puis `n_zMax(m, n)`. Chaque niveau dépend du précédent.
+]
+
+```cpp
+Basis::Basis(double _br, double _bz, int _N, double _Q) : br(_br), bz(_bz), N(_N), Q(_Q) {
+    /**
+     * @brief Calculer mmax, nMax et n_zMax en fonction de N et Q (Troncation)
+     * 
+     */
+    //Appel à la fonctions de troncature pour calculer mMax
+    mMax = m_max( _N, _Q);
+
+
+        //Une fois mMax calculé, on peut calculer nMax et n_zMax
+        //On initialise nMax avec de taille mMax et n_zMax a une matrice de taille mMax
+    nMax.zeros(mMax) ;
+
+        //Calculer nMax pour chaque m
+    for(int m = 0; m < mMax ; ++m) {
+        nMax(m) = n_max(mMax , m);
+    }
+
+        //initialiser n_zMax avec une matrice de taille mMax x nMax.max()
+        n_zMax.zeros(mMax, nMax.max());
+
+        //Calculer n_zMax pour chaque combinaison de m et n
+    for(int m = 0; m < mMax ; ++m) {
+        for(int n = 0; n < nMax(m) ; ++n) {
+            n_zMax(m, n) = nz_max(m, n, _N, _Q);
+        }
+    }
+
+}
+```
+
+---
+
+# III.4 - Basis : Fonction factorielle
+
+.block[
+### Factorielle en `double`
+Le facteur radial contient `$\sqrt{n! / (n+|m|)!}$`. Le calcul en `double` évite la division entière et le débordement des `int`.
+]
+
+```cpp
+static double factoriel(int n) {
+    /**
+     * @brief Fonction pour calculer la factorielle d'un entier n
+     * 
+     */
+    double f = 1.0;
+    for (int k = 2; k <= n; ++k) f *= k;
+    return f;
+}
+```
+
+.alert.animated.fadeInUp[
+Le mot-clé `static` limite la fonction à `basis.cpp`.
+]
+
+---
+
+# III.4 - Basis : Partie radiale (`rPart`)
+
+.block[
+### Composante radiale
+`$$R_{m,n}(r) = \frac{1}{b_r\sqrt{\pi}} \sqrt{\frac{n!}{(n+|m|)!}} \left(\frac{r}{b_r}\right)^{|m|} e^{-\frac{r^2}{2b_r^2}} L_n^{|m|}\!\left(\frac{r^2}{b_r^2}\right)$$`
+]
+
+```cpp
+arma::vec Basis::rPart(arma::vec r, int m, int n) {
+    /**
+     * @brief Implémentation de la fonction de base pour la partie radiale
+     * 
+     */
+    int abs_m = std::abs(m);
+
+        //Calculer le facteur de normalisation
+    double facteur = (1.0 / (br * std::sqrt(M_PI))) * std::sqrt(factoriel(n) / factoriel(n + abs_m));
+
+        //Calculer les puissances et l'exponentielle
+    arma::vec puissance = arma::square(r) / (br * br);
+
+        //Calculer l'exponentielle
+    arma::vec exponentielle = arma::exp(-puissance / 2.0);
+
+    arma::vec fact_vec = arma::pow(r / br, abs_m);
+
+        //Calculer les polynômes de Laguerre
+    Poly::calcLaguerre(abs_m + 1, n + 1, puissance);
+    arma::vec laguerre = Poly::laguerre(abs_m, n);
+
+        //Combiner tous les éléments pour obtenir la fonction de base radiale
+    return facteur * fact_vec % laguerre % exponentielle;
+}
+```
+
+---
+
+# III.4 - Basis : Partie radiale : points clés
+
+.block[
+### Lecture du code
+- `puissance` vaut `$r^2 / b_r^2$` : c'est l'argument de Laguerre, réutilisé dans l'exponentielle.
+- `calcLaguerre(abs_m + 1, n + 1, puissance)` évalue avec le polynôme de Laguerre en les points soumis en paramètres
+- `Poly::laguerre(abs_m, n)` récupère récupère la portion voulue de la matrice évaluée.
+]
+
+.alert.animated.fadeInUp[
+`%` est le produit de Schur (terme à terme) d'Armadillo.
+]
+
+---
+
+# III.4 - Basis : Partie axiale (`zPart`)
+
+.block[
+### Composante selon `$z$`
+`$$Z_{n_z}(z) = \frac{1}{\sqrt{b_z\, 2^{n_z}\, n_z!\, \sqrt{\pi}}} \, H_{n_z}\!\left(\frac{z}{b_z}\right) e^{-\frac{z^2}{2b_z^2}}$$`
+]
+
+```cpp
+arma::vec Basis::zPart(arma::vec z, int n_z) {
+    /**
+     * @brief Implémentation de la fonction de base pour la partie z
+     * 
+     */
+    //Calculer le facteur de normalisation
+    double facteur = 1.0 / (std::sqrt(bz) * sqrt(std::pow(2.0, n_z) * factoriel(n_z) * std::sqrt(M_PI)));
+
+        //Calculer les puissances et l'exponentielle
+    arma::vec puissance = arma::square(z) / (bz * bz);
+
+        //Calculer l'exponentielle
+    arma::vec exponentielle = arma::exp(-puissance / 2.0);
+
+        //Calculer les polynômes d'Hermite
+    Poly::calcHermite(n_z + 1, z / bz);
+    arma::vec hermite = Poly::hermite(n_z);
+
+        //Combiner tous les éléments pour obtenir la fonction de base z
+    return facteur * hermite % exponentielle;
+}
+```
+
+.alert.animated.fadeInUp[
+Hermite s'évalue en `$z / b_z$`, tandis que l'exponentielle utilise `$z^2 / b_z^2$`.
+]
+
+---
+
+# III.4 - Basis : Produit tensoriel (`basisFunc`)
+
+
+.block[
+### Construction 2D
+La fonction de base se calcule en deux morceaux indépendants : une partie en `$z$` et une partie en `$r$`. On les multiplie pour obtenir la valeur en chaque point de la grille.
+]
+
+```cpp
+arma::mat Basis::basisFunc(int m , int n , int n_z , arma::vec z, arma::vec r) {
+        //Calcul de r_part et z_part 
+    arma::vec r_part = rPart(r, m, n);
+    arma::vec z_part = zPart(z, n_z);
+
+        // Produit tensoriel pour obtenir la matrice finale
+    return z_part * r_part.t(); 
+}
+```
+
+.alert.animated.fadeInUp[
+`z_part` est un vecteur colonne et `r_part.t()` un vecteur ligne : le résultat a `z` en lignes et `r` en colonnes.
+]
+---
+
+# IV. - Implémentation de la densité
+
+.hcenter.vcenter.large[
+1. Approche naïve et diagnostic des performances
+
+2. Linéarisation et propriétés physiques de `$\rho$`
+
+3. Mémorïsation et compromis Temps / Mémoire (`rho_memory_max`)
+
+4. Vectorisation algébrique et BLAS (`rho_fabulous`)
+]
+
+---
+
+# IV.1.1 - Approche naïve : De la formule au code
+
+Rappel de l'expression théorique de la densité locale sur la grille spatiale `$(z, r_\perp)$` :
+
+`$$\rho(\mathbf{r}) = \sum_{a} \sum_{b} \rho_{ab} \, \psi_a(\mathbf{r}) \psi^*_b(\mathbf{r})$$`
+
+.block[
+### Principe de l'algorithme naïf (`rho_naif`)
+Chaque état quantique `$a$` (ou `$b$`) est un triplet `$(m, n, n_z)$`. Parcourir tous les couples `$(a, b)$` revient naturellement à écrire **6 boucles `for` imbriquées** (3 pour `$a$`, 3 pour `$b$`).
+]
+
+* **Rôle dans le projet** : Cette implémentation directe traduit littéralement l'équation mathématique. Elle sert de **référence absolue (vérité terrain)** pour valider la justesse numérique de toutes nos optimisations suivantes via les tests unitaires.
+
+```cpp
+arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+```
+
+---
+
+# IV.1.2 - Approche naïve : Implémentation (`rho_naif`)
+
+```cpp
+arma::mat result = arma::zeros(nbR, nbZ);
+int a = 0, b = 0;
+
+// Triplet quantique a = (m, n, n_z)
+for (int m = 0; m < basis.mMax; m++) {
+  for (int n = 0; n < basis.nMax(m); n++) {
+    for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
+      b = 0;
+      // Triplet quantique b = (mp, np, n_zp)
+      for (int mp = 0; mp < basis.mMax; mp++) {
+        for (int np = 0; np < basis.nMax(mp); np++) {
+          for (int n_zp = 0; n_zp < basis.n_zMax(mp, np); n_zp++) {
+
+            arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
+            arma::mat funcB = basis.basisFunc(mp, np, n_zp, zVals, rVals);
+
+            result += (funcA % funcB) * rho(a, b);
+            b++;
+          }
+        }
+      }
+      a++;
+    }
+  }
+}
+```
+
+---
+
+# IV.1.3 - Diagnostic : Pourquoi est-ce si lent ?
+
+Si `$N_{\text{états}}$` est le nombre total de triplets `$(m, n, n_z)$`, cette approche souffre de **3 défauts majeurs** :
+
+1. **Explosion combinatoire (`$O(N_{\text{états}}^2)$`)** : 
+   On évalue aveuglément tous les couples `$(a, b)$`, même lorsque le coefficient physique `$\rho_{ab}$` est nul.
+2. **Recalculs massifs des polynômes** : 
+   `basisFunc` (qui évalue Hermite, Laguerre et les exponentielles sur toute la grille 2D) est appelée **`$2 \times N_{\text{états}}^2$` fois** au lieu de `$N_{\text{états}}$` fois !
+3. **Ignorance des symétries** : 
+   Le code recalcule intégralement `$(b, a)$` après avoir calculé `$(a, b)$`.
+
+<br>
+
+.alert.animated.fadeInUp[
+**Constat :** La majorité écrasante du temps CPU est gaspillée à recalculer des fonctions de base déjà connues pour les multiplier par `$\rho_{ab} = 0$`.
+]
+
+---
+
+# IV.2.1 - Propriétés physiques de la matrice `$\rho$`
+
+Pour optimiser, exploitons la structure mathématique de la matrice de densité `$\rho$` :
+
+.row[
+.column.w50[
+### 1. Diagonale par blocs (`$m = m'$`)
+Par symétrie azimutale du noyau :
+`$$\rho_{ab} = \delta_{m_a, m_b} \rho_{ab}$$`
+Si `$m \neq m'$`, alors `$\rho_{ab} = 0$`. Seuls les blocs diagonaux sont non nuls.
+
+### 2. Symétrique (`$\rho_{ab} = \rho_{ba}$`)
+Les termes `$a \neq b$` et `$b \neq a$` donnent exactement la même contribution :
+`$$\rho_{ab}\psi_a\psi_b + \rho_{ba}\psi_b\psi_a = 2\,\rho_{ab}\psi_a\psi_b$$`
+]
+
+.column.w5[
+&nbsp;
+]
+
+.column.w45[
+<br>
+.hcenter[
+| | `$m'=0$` | `$m'=1$` | `...` | `$m_{\max}-1$` |
+|:---:|:---:|:---:|:---:|:---:|
+| **`$m=0$`** | **Bloc 0** | `0` | `...` | `0` |
+| **`$m=1$`** | `0` | **Bloc 1** | `...` | `0` |
+| **`...`** | `...` | `...` | `...` | `0` |
+| **`$m_{\max}-1$`** | `0` | `0` | `0` | **Bloc final** |
+]
+]
+]
+
+---
+
+# IV.2.2 - Linéarisation et Filtrage (`rho_linearized`)
+
+.block[
+### Étape 1 : Aplatir les 6 boucles en une table d'états 1D
+On associe chaque indice global `$i \in [0, N_{\text{états}}-1]$` à son triplet quantique `$(m, n, n_z)$` via un vecteur de structures `BasisState`.
+]
+
+```cpp
+struct BasisState { int m; int n; int n_z; };
+std::vector<BasisState> states;
+
+for (int m = 0; m < basis.mMax; m++)
+  for (int n = 0; n < basis.nMax(m); n++)
+    for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++)
+      states.push_back({m, n, n_z});
+
+int totalStates = states.size();
+```
+
+* **Avantage immédiat** : On passe de 6 boucles imbriquées à 2 boucles simples sur `i` et `j`, et on peut sortir le calcul de `funcA` de la boucle interne sur `j` !
+
+---
+
+# IV.2.3 - Exploitation de `$m = m'$` et de la symétrie
+
+En combinant le filtrage azimutal (`m == mp`) et la symétrie (`j` commence à `i`) :
+
+```cpp
+arma::mat result = arma::zeros(nbR, nbZ);
+
+for (int i = 0; i < totalStates; ++i) {
+    int m = states[i].m, n = states[i].n, n_z = states[i].n_z;
+    
+    // funcA n'est calculée qu'UNE SEULE fois par ligne i !
+    arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
+
+    // Boucle triangulaire supérieure (j >= i) grâce à la symétrie
+    for (int j = i; j < totalStates; ++j) {
+        if (m == states[j].m) { // Filtre azimutal : bloc diagonal uniquement
+            double rho_val = rho(i, j);
+            arma::mat funcB = basis.basisFunc(m, states[j].n, states[j].n_z, zVals, rVals);
+
+            if (i == j) result += (funcA % funcB) * rho_val;       // Diagonale
+            else        result += 2.0 * (funcA % funcB) * rho_val; // Hors-diagonale (x2)
+        }
+    }
+}
+```
+
+.alert[
+**Limite restante :** Dans la boucle sur `j`, la fonction `funcB` est toujours recalculée à chaque itération, et on teste inutilement des `j` où `m != states[j].m`.
+]
+
+---
+
+# IV.3.1 - Mémorïsation et Partitionnement (`rho_memory_max`)
+
+Pour éliminer **100 % des recalculs** de fonctions de base et **100 % des tests inutiles** sur `$m$` :
+
+.row[
+.column.w45[
+.block[
+### 1. Mémorïsation (`func`)
+On précalcule `basisFunc` une unique fois pour chaque état `$i$`, et on stocke les matrices dans `std::vector<arma::mat> func`.
+* **Coût d'accès** : `$O(1)$` en lecture.
+]
+]
+
+.column.w10[
+&nbsp;
+]
+
+.column.w45[
+.block[
+### 2. Partitionnement (`indices_par_m`)
+On regroupe les indices `$i$` par valeur de `$m$` dans une table `indices_par_m[m]`.
+* **Gain** : On itère directement dans chaque bloc diagonal `$m$`.
+]
+]
+]
+
+```cpp
+std::vector<BasisState> states;
+std::vector<arma::mat> func;
+std::vector<std::vector<int>> indices_par_m(basis.mMax);
+
+int idx = 0;
+for (int m = 0; m < basis.mMax; m++) {
+  for (int n = 0; n < basis.nMax(m); n++) {
+    for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
+      states.push_back({m, n, n_z});
+      func.push_back(basis.basisFunc(m, n, n_z, zVals, rVals)); // Précalcul unique !
+      indices_par_m[m].push_back(idx++);                        // Classement par bloc m
+    }
+  }
+}
+```
+
+---
+
+# IV.3.2 - Calcul principal et Analyse HPC (`rho_memory_max`)
+
+```cpp
+arma::mat result = arma::zeros(nbR, nbZ);
+
+for (int m = 0; m < basis.mMax; ++m) {
+    const auto& indices = indices_par_m[m];
+    int size = indices.size();
+
+    for (int idx_i = 0; idx_i < size; ++idx_i) {
+        int i = indices[idx_i];
+        result += (func[i] % func[i]) * rho(i, i); // Terme diagonal
+
+        for (int idx_j = idx_i + 1; idx_j < size; ++idx_j) {
+            int j = indices[idx_j];
+            result += 2.0 * (func[i] % func[j]) * rho(i, j); // Termes symétriques
+        }
+    }
+}
+```
+
+.block[
+### Compromis Temps / Mémoire (Space-Time Tradeoff)
+* **Empreinte mémoire négligeable** : Stocker `$N_{\text{états}}$` matrices de taille `$N_r \times N_z$` ne représente que quelques mégaoctets, ce qui tient aisément dans les **caches L2/L3** d'un processeur moderne.
+* **Goulot d'étranglement résiduel** : Les doubles boucles `for` effectuent des opérations matricielles élément par élément (**niveau BLAS 1 / 2**), limitées par la bande passante mémoire (*Memory-Bound*). Peut-on transformer cette somme en **produit matriciel pur (BLAS 3)** ?
+]
+
+---
+
+# IV.4.1 - `rho_fabulous` : L'Algèbre cachée derrière la somme
+
+Pour passer à la vitesse supérieure, reformulons le calcul d'un bloc `$m$` sous forme **matricielle**.
+Soit `$S = N_r \times N_z$` le nombre total de points de la grille spatiale 2D, et `$K_m$` le nombre d'états dans le bloc `$m$`.
+
+.block[
+### 1. Vectorisation de la grille spatiale (Matrice `$F_m$`)
+En "aplatissant" chaque grille 2D `$\psi_k(z, r)$` en un vecteur colonne de taille `$S$` (via `arma::vectorise`), on construit la matrice `$F_m \in \mathbb{R}^{S \times K_m}$` dont chaque colonne `$k$` est un état de base :
+
+`$$F_m = \begin{pmatrix} | & | & & | \\ \text{vec}(\psi_1) & \text{vec}(\psi_2) & \cdots & \text{vec}(\psi_{K_m}) \\ | & | & & | \end{pmatrix} \in \mathbb{R}^{S \times K_m}$$`
+]
+
+En chaque point spatial `$p \in \{1, \dots, S\}$` (ligne `$p$` de `$F_m$`), la densité du bloc `$m$` s'écrit :
+
+`$$\rho^{(m)}_p = \sum_{i=1}^{K_m} \sum_{j=1}^{K_m} (F_m)_{p, i} \, (\rho_m)_{i, j} \, (F_m)_{p, j} = \left( F_m \, \rho_m \, F_m^T \right)_{p, p}$$`
+
+.alert[
+**Révélation algébrique :** Le vecteur densité recherché n'est autre que la **diagonale** du produit matriciel `$R_m = F_m \, \rho_m \, F_m^T$` !
+]
+
+---
+
+# IV.4.2 - L'Astuce Algébrique : Éviter la matrice `$S \times S$`
+
+Calculer explicitement `$R_m = F_m \, \rho_m \, F_m^T$` serait catastrophique : `$R_m$` est de taille `$S \times S$` !
+*(Exemple : pour une grille `$300 \times 300$`, `$S = 90\,000$`, donc `$R_m$` aurait `$8{,}1 \times 10^9$` éléments `$\approx 64\text{ Go}$` de RAM !)*
+
+.block[
+### Comment extraire `$\text{diag}(A \, F_m^T)$` sans calculer `$A \, F_m^T$` ?
+Posons la matrice intermédiaire **`$A = F_m \, \rho_m \in \mathbb{R}^{S \times K_m}$`** (très compacte car `$K_m \ll S$`).
+Par définition du produit matriciel, le terme diagonal `$p$` de `$A \, F_m^T$` vaut :
+
+`$$\left(A \, F_m^T\right)_{p, p} = \sum_{k=1}^{K_m} A_{p, k} \, (F_m^T)_{k, p} = \sum_{k=1}^{K_m} A_{p, k} \, (F_m)_{p, k} = \sum_{k=1}^{K_m} (A \odot F_m)_{p, k}$$`
+]
+
+<br>
+
+.row[
+.column.w45[
+**Identité fondamentale :**
+`$$\text{diag}\!\left(A \, F_m^T\right) = \text{sum}\!\left(A \odot F_m, \text{axe}=1\right)$$`
+où `$\odot$` (`%` dans Armadillo) est le produit de Hadamard et `sum(..., 1)` additionne les colonnes ligne par ligne.
+]
+
+.column.w10[
+&nbsp;
+]
+
+.column.w45[
+.alert[
+**Gain algorithmique :**
+- **Mémoire** : `$O(S \times K_m)$` au lieu de `$O(S^2)$` (Zéro matrice `$S \times S$` !)
+- **Calcul de `$A$`** : Un unique appel **DGEMM (BLAS 3)** (`F_m * rho_m`).
+]
+]
+]
+
+---
+
+# IV.4.3 - Implémentation commentée de `rho_fabulous`
+
+```cpp
+for (int m = 0; m < basis.mMax; m++) {
+    const auto& indices = indices_par_m[m];
+    int K_m = indices.size();
+    if (K_m == 0) continue;
+
+    // 1. Construction de la matrice des états aplatis F_m (Taille : S x K_m)
+    arma::mat F_m(nbR * nbZ, K_m);
+    for (int k = 0; k < K_m; ++k) {
+        const auto& state = states[indices[k]];
+        F_m.col(k) = arma::vectorise(basis.basisFunc(state.m, state.n, state.n_z, zVals, rVals));
+    }
+
+    // 2. Extraction du bloc diagonal rho_m (Taille : K_m x K_m)
+    arma::uvec idx_vec = arma::conv_to<arma::uvec>::from(indices);
+    arma::mat rho_m = rho.submat(idx_vec, idx_vec);
+
+    // 3. Produit matriciel BLAS Niveau 3 (Taille : S x K_m)
+    arma::mat A = F_m * rho_m;
+
+    // 4. Astuce algébrique : Diagonale directe via Hadamard + Somme sur les colonnes
+    arma::vec diag_R_m = arma::sum(A % F_m, 1);
+
+    // 5. Remise en forme 2D (nbR x nbZ) et accumulation
+    result += arma::reshape(diag_R_m, nbR, nbZ);
+}
+```
+
+---
+
+# IV.4.4 - Bilan comparatif des algorithmes
+
+<br>
+
+.hcenter[
+| Algorithme | Boucles sur les états | Appels à `basisFunc` | Opération cœur | Niveau BLAS / Matériel |
+|:---|:---:|:---:|:---|:---|
+| **`rho_naif`** | 6 boucles (`$N_{\text{états}}^2$`) | `$2 \, N_{\text{états}}^2$` | `funcA % funcB * rho(a,b)` | Scalaire / Non-optimisé |
+| **`rho_linearized`** | 2 boucles (`$m = m'$`) | `$\approx N_{\text{états}} \times \bar{K}_m$` | `funcA % funcB * rho(i,j)` | BLAS 1 (Limité par recalculs) |
+| **`rho_memory_max`** | Par bloc `$m$` (`$j > i$`) | **`$N_{\text{états}}$`** (Mémoïsé) | `2 * (func[i] % func[j])` | BLAS 1/2 (*Memory-Bound*) |
+| **`rho_fabulous`** | **1 boucle sur `$m$`** | **`$N_{\text{états}}$`** | **`A = F_m * rho_m`** puis `sum(A % F_m, 1)` | **BLAS 3 (`DGEMM` / SIMD / Multi-thread)** |
+]
+
+<br>
+
+.block[
+### Pourquoi `rho_fabulous` domine sur les grandes grilles ?
+En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Armadillo délègue le calcul à **OpenBLAS / MKL**. Le processeur exploite alors pleinement la vectorisation matérielle (**AVX-512 / SIMD**), le **multi-threading** sur tous les cœurs et le découpage en blocs pour les caches L1/L2.
+]
+
+---
+
+# Résultats 
+
+
+.vcenter.large[
+1. Résultats
+2. Benchmark
+3. Profilage
+]
+
+---
+
+# Résultats 
+
+## 1. résultats
+
+---
+
+# V.1 - Résultats Visuels : Les Coupes 2D
+
+.block[
+### Comparaison des profils de densité
+Voici les coupes transversales physiques obtenues via le wrapper C++ et tracées sous Python, mettant en évidence les différentes étapes d'optimisation.
+]
+
+.row[
+.column.w45[
+.hcenter[![](images/density_naif_2D.png)]
+.hcenter.small[`rho_naif` (Référence - 1.0x)]
+]
+
+.column.w10[
+&nbsp;
+]
+
+.column.w45[
+.hcenter[![](images/density_linearized_2D.png)]
+.hcenter.small[`rho_linearized` (~ [X]x plus rapide)]
+]
+]
+
+---
+
+# V.1 - Résultats Visuels : Mémorïsation & BLAS
+
+.block[
+### Des performances accrus sans perte de précision
+]
+
+.row[
+.column.w45[
+.hcenter[![](images/density_memory_max_2D.png)]
+.hcenter.small[`rho_memory_max` (~ [Y]x plus rapide)]
+]
+
+.column.w10[
+&nbsp;
+]
+
+.column.w45[
+.hcenter[![](images/density_fabulous_2D.png)]
+.hcenter.small[`rho_fabulous` (> [Y]x plus rapide)]
+]
+]
+
+---
+
+# V.1 - Validation Numérique : Écarts vs Naïf
+
+.block[
+### Cartes de différence ($\Delta\rho$)
+Vérification que les optimisations ne modifient pas la physique ($\Delta\rho = \text{Optimisé} - \text{Naïf}$). 
+]
+
+.row[
+.column.w50[
+.hcenter[<img src="images/diff_memory_max_vs_naif.png" width="90%">]
+.hcenter.small[`memory_max` vs `naif` (~ [Y]x)]
+]
+
+.column.w50[
+.hcenter[<img src="images/diff_fabulous_vs_naif.png" width="90%">]
+.hcenter.small[`fabulous` vs `naif` (~ [Y]x)]
+]
+]
+
+.alert.hcenter[
+Erreurs limitées aux bruits d'arrondis machine ($\approx 10^{-15}$).
+]
+
+---
+
+# Résultats 
+
+1. Résultats
+## 2. Benchmarks
+
+---
+
+# V.2. - Benchmarks
+
+.row[
+.column[
+.block[`nb_warmup = 10`, 
+`nb_iter = 10`,
+`nbR=5`,
+`nbZ=5`]
+
+| Algorithme | Temps (s/res.) | Accélération |
+|:---|:---:|:---:|
+| **Naïf** | **0.128661** | **1x** |
+| Kroenecker | 0.015215 | x8.46 |
+| Factorized | 0.007923 | x16.24 |
+| Linearized | 0.008247 | x15.60 |
+| Linearized 2. | 0.015993 | x8.04 |
+| Optimized | 0.007940 | x16.20 |
+| Symmetric | 0.004247 | x30.29 |
+| Sym. Opti. | 0.004266 | x30.16 |
+| **Memory max** | **0.000180** | **x714.78** |
+| **Fabulous** | **0.000242** | **x531.66** |
+| Ultimate | 0.000212 | x606.89 |
+
+.block[Temps d'execution : 5.970814 s]
+]
+.column[
+
+.block[
+`nb_warmup = 10`, 
+`nb_iter = 10`,
+`nbR=30`,
+`nbZ=30`
+]
+
+| Algorithme | Temps (s/res.) | Accélération |
+|:---|:---:|:---:|
+| **Naïf** | **0.496243** | **1x** |
+| Kroenecker | 0.057893 | x8.57 |
+| Factorized | 0.031446 | x15.78 |
+| Linearized | 0.031412 | x15.80 |
+| Linearized 2. | 0.058561 | x8.47 |
+| Optimized | 0.031739 | x15.64 |
+| Symmetric | 0.017871 | x27.77 |
+| Sym. Opti. | 0.017863 | x27.78 |
+| **Memory max** | **0.003696** | **x134.26** |
+| **Fabulous** | **0.010398** | **x47.72** |
+| Ultimate | 0.008173 | x60.72 |
+
+
+.block[Temps d'execution : 17.369790 s]
+]
+]
+
+---
+
+# V.2. - Benchmark final
+
+.block[
+`nb_warmup = 10`, 
+`nb_iter = 60`,
+`nbR=100`,
+`nbZ=100`
+]
+.w50.hcenter[
+| Algorithme | Temps (s/res.) | Accélération |
+|:---|:---:|:---:|
+| **Naïf** | **2.114799** | **1x** |
+| Kroenecker | 0.250359 | x8.45 |
+| Factorized | 0.154771 | x13.66 |
+| Linearized | 0.154739 | x13.67 |
+| Linearized 2. | 0.249960 | x8.46 |
+| Optimized | 0.154670 | x13.67 |
+| Symmetric | 0.097446 | x21.70 |
+| Sym. Opti. | 0.097073 | x21.79 |
+| **Memory max** | 0.047831 | **x44.21** |
+| **Fabulous** | 0.034142 | **x61.94** |
+| Ultimate | 0.013065 | x161.87 |
+]
+
+---
+
+# Résultats 
+
+1. Résultats
+2. Benchmarks
+## 3. Profilage
+
+---
+
+# V.3. - Gestion mémoire
+
+```sh
+make debug
+make
+```
+
+```Makefile
+OPTIONS_DEBUG   := $(OPTIONS_COMMON) -fsanitize=address ...
+```
+
+.block[
+`-fsanitize=address` permet de faire un rapport d'erreur en cas d'erreur.
+]
+
+
+.alert[
+Le benchmark utilise tous les algorithmes : il permet donc d'évaluer la gestion mémoire
+]
+
+```sh
+make bench ARGS=<algo>
+valgrind ./exec
+```
+
+
+
+```gnome-terminal
+
+```
+
+---
+
+# V.3 - Perf
+
+```sh
+make perf
+```
+
+Dans le `Makefile`
+
+```Makefile
+perf: OPTIONS := $(OPTIONS_COMMON) -O0 -g -fno-omit-frame-pointer
+perf: $(main_exec)
+	perf record -F 999 -g ./$(main_exec) $(ARGS)
+	perf report --no-children --stdio 2>/dev/null | head -50
+```
+
+---
+
+# VI. Retex & Gestion de projet : Leçons apprises
+
+.hcenter.vcenter.large[
+1. Documentation : Le piège de l'évidence à chaud
+2. Planification : La sous-estimation de la charge
+3. Architecture & Git : L'enfer des conflits de mergememoïsation
+4. Soutenance : Le piège du sprint final
+]
+
+---
+
+# VI.1 - Documentation : Le piège de l'évidence à chaud
+
+.block[
+### Le constat
+- **Le piège du "c'est évident"** : Sur le moment, la logique de notre code nous paraissait tellement limpide qu'on n'a pas pris le temps de la commenter ni de documenter nos choix.
+- **Le réveil difficile** : Dix jours plus tard, face à notre propre code, c'était le néant total. On a perdu un temps précieux à ré-analyser notre propre logique.
+]
+
+.alert.hcenter[
+**Leçon apprise :** Ce qui est évident aujourd'hui ne l'est plus du tout deux semaines après. Commenter à chaud est un gain de temps, pas une perte.
+]
+
+---
+
+# VI.2 - Planification : Cartographier la charge de travail
+
+.block[
+### Une vision initiale trop optimiste
+- **Manque de visibilité** : On a foncé tête baissée dans le code sans prendre assez de temps en amont pour lister exhaustivement toutes les tâches et évaluer leur volume réel.
+- **Conséquence directe** : Du retard accumulé rapidement, car la complexité de certaines briques techniques a été sous-estimée.
+]
+
+.block[
+### Ce qu'on aurait dû faire
+- Poser les bases plus sérieusement lors de la première semaine : découpage précis des tâches, priorisation et jalons réalistes.
+]
+
+---
+
+# VI.3 - Architecture & Git : L'enfer des merges
+
+.block[
+### Quand l'imprécision technique plombe l'organisation
+- **Des structures instables** : Des choix de conception encore flous nous ont poussés à modifier les structures de données principales à plusieurs reprises, chacun de notre côté.
+- **Le cauchemar Git** : Travailler sur des branches séparées avec des structures mouvantes a rendu les `git merge` extrêmement laborieux et sources de conflits permanents.
+]
+
+.alert.hcenter[
+**Leçon apprise :** Figer les interfaces et les structures de données en équipe *avant* de coder en parallèle sur des branches distinctes.
+]
+
+---
+
+# VI.4 - Rédaction : Éviter le rush de fin de projet
+
+.block[
+### Le syndrome du sprint final
+- **Le constat** : On a concentré 100% de nos efforts sur le code, en repoussant la création de la présentation au tout dernier moment.
+- **La difficulté** : Résumer et structurer plusieurs semaines de travail dans l'urgence de la dernière semaine génère un stress évitable.
+]
+
+.block[
+### La bonne pratique pour la suite
+- Produire le diaporama **au fil de l'eau** : noter les difficultés surmontées et intégrer les schémas d'architecture dès qu'une partie est validée.
+]
+
+---
+
+# Merci de nous avoir écouté
+
+<br>
+
+.hcenter[
+
+## J.M. Assogba - M. Glessmer - M. Lecompagnon
+]
+
+
+<br>
+
+----------------------------------------
+
+<br>
+
+.hcenter[
+## Simulation de la densité nucléaire
+]
+
+<br>
+
+.w60.hcenter[
+![](images/density_memory_max_2D.png)
+]
+
     </textarea>
 
     <script src="core/javascript/remark.js"></script>
@@ -604,6 +2373,8 @@ doc.add_root(plt.gridplot(
 Bokeh.embed.add_document_standalone(doc, document.getElementById("bokeh01"));
 
     // ===== END =====
+
+
 
     </script>
     <script src="gitgraphs.js" type="text/javascript"></script>
