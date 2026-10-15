@@ -253,7 +253,26 @@ $$`
 
 ---
 
-# II.1. - Outils
+# II.1. Outils utilisés
+
+.block[
+### Développement
+- **Git** : Gestion des versions et travail à trois
+- **Makefile** : compilation, exécution et tests automatisés
+- **Armadillo** : bibliothèque C++ d'algèbre linéaire (vecteurs, matrices)
+]
+
+.block[
+### Qualité et analyse
+- **CxxTest** : tests unitaires ; `cxxtestgen` génère le programme de test à partir des fichiers `tests/*.h`
+- **Doxygen** : documentation générée à partir des commentaires du code
+- **perf** et **Valgrind** : profilage (temps d'exécution, mémoire)
+]
+
+.block[
+### Présentation
+- **remark.js** : Utilisé pour les la mise en place des slides
+]
 
 ---
 
@@ -338,6 +357,138 @@ Racine
 ---
 
 # II.4. - Makefile
+
+.block[
+### Arborescence
+- `include/` : en-têtes (`basis.hpp`, `poly.hpp`, ...)
+- `src/` : sources (`basis.cpp`, `poly.cpp`, `main.cpp`)
+- `tests/` : tests unitaires CxxTest (`test_basis.h`, `test_poly.h`, `test_mandatory.h`)
+- `bin/` : fichiers générés (`.o`, `.d`), créé automatiquement
+]
+
+Le `Makefile` automatise la compilation, l'exécution et les tests avec quatre commandes : `make`, `make release`, `make test`, `make clean`.
+
+---
+
+# V.2 Variables et options de compilation
+
+```makefile
+CXX        := g++
+CXXTESTGEN := cxxtestgen
+
+OPTIONS_COMMON  := -Wall -Wextra -Werror -Iinclude
+OPTIONS_DEBUG   := $(OPTIONS_COMMON) -g -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer
+OPTIONS_RELEASE := $(OPTIONS_COMMON) -O2
+DEPFLAGS        := -MMD -MP
+LDLIBS          := -larmadillo
+
+# Options par défaut (surchargées par les cibles debug, release et test)
+OPTIONS := $(OPTIONS_DEBUG)
+
+files   := basis poly
+objects := $(files:%=bin/%.o)
+
+main_exec    := exec
+test_headers := tests/test_basis.h tests/test_mandatory.h tests/test_poly.h
+test_cpp     := bin/tests.cpp
+test_obj     := bin/tests.o
+test_exec    := bin/test
+```
+
+.block[
+- **Commun** : tous les warnings sont activés et traités comme des erreurs (`-Werror`).
+- **Debug** : symboles pour le débogage.
+- **Release** : l'option `-O2` pour l'optimisation.
+- `DEPFLAGS` génère les fichiers `.d` qui listent les en-têtes dont dépend chaque `.o`.
+- `LDLIBS` lie la bibliothèque Armadillo.
+]
+
+---
+
+# V.3 Programme principal
+
+```makefile
+.PHONY: all debug release run test clean
+
+all: debug
+
+debug: OPTIONS := $(OPTIONS_DEBUG)
+debug: run
+
+release: OPTIONS := $(OPTIONS_RELEASE)
+release: run
+
+# ---------- Programme principal ----------
+run: $(main_exec)
+@printf "\n\n========== Debut Affichage Programme ==========\n\n"
+@./$(main_exec)
+@printf "\n\n========== Fin Affichage Programme ==========\n\n"
+
+$(main_exec): src/main.cpp $(objects)
+$(CXX) $(OPTIONS) $^ -o $@ $(LDLIBS)
+```
+
+.block[
+- `make` (ou `make debug`) compile en mode debug puis lance le programme.
+- `make release` fait de même en mode optimisé.
+- `debug` et `release` redéfinissent `OPTIONS` pour cette cible et ses dépendances.
+- L'exécutable `exec` est obtenu en liant `main.cpp` et les objets `basis.o` et `poly.o`.
+]
+
+---
+
+# V.4 Tests unitaires (CxxTest)
+
+```makefile
+# ---------- Tests unitaires (CxxTest) ----------
+test: OPTIONS := $(OPTIONS_DEBUG)
+test: $(test_exec)
+@printf "\n\n========== Execution de la Suite de Tests ==========\n\n"
+@./$(test_exec)
+@printf "\n\n====================================================\n\n"
+
+$(test_exec): $(test_obj) $(objects)
+$(CXX) $(OPTIONS) $^ -o $@ $(LDLIBS)
+
+$(test_obj): $(test_cpp)
+$(CXX) $(OPTIONS) -c $< -o $@
+
+$(test_cpp): $(test_headers) | bin
+$(CXXTESTGEN) --error-printer -o $@ $(test_headers)
+```
+
+.block[
+`make test` enchaîne trois étapes :
+1. `cxxtestgen` génère `bin/tests.cpp` à partir des trois fichiers de tests.
+2. Ce fichier est compilé en `bin/tests.o`.
+3. Il est lié aux objets du projet pour produire `bin/test`, qui est exécuté.
+]
+
+---
+
+# V.5 Compilation des sources et nettoyage
+
+```makefile
+# ---------- Compilation des sources ----------
+bin/%.o: src/%.cpp | bin
+$(CXX) $(OPTIONS) $(DEPFLAGS) -c $< -o $@
+
+bin:
+    mkdir -p $@
+
+# Recompile automatiquement si un header change (fichiers .d générés par -MMD)
+-include $(objects:.o=.d)
+
+clean:
+    rm -rf bin $(main_exec)
+```
+
+.block[
+- La règle `bin/%.o: src/%.cpp` compile chaque source en objet.
+- `| bin` :  le dossier est créé s'il manque, mais ne force pas la recompilation.
+- `-include` charge les fichiers `.d` : si un en-tête change, les `.o` concernés sont recompilés.
+- `make clean` supprime `bin/` et l'exécutable.
+]
 
 ---
 
