@@ -64,9 +64,74 @@ arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nb
                             }
                             */
                             
-                            if(m == mp) {
+                            
                                 result += funcA % funcB * rho(a, b);
+                            
+
+                            b++;
+
+
+                        }
+                    }
+                }
+
+
+                a++;
+
+            }
+        }
+    }
+
+    return result;
+}
+
+arma::mat rho_azimutal(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ){
+
+    Basis basis(BR, BZ, N, Q);
+
+    arma::mat rho;
+    if (!rho.load("rho.arma", arma::arma_ascii)) {
+        std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
+        // Optionnel : créer une matrice par défaut pour tester
+        // rho = arma::eye(basis.mMax, basis.mMax);
+        return arma::zeros(nbR, nbZ);
+    }
+
+    std::cout << "Dimensions de rho chargées : " << rho.n_rows << " x " << rho.n_cols << std::endl;
+    std::cout << "mMax attendu : " << basis.mMax << std::endl;
+
+    if (rho.n_rows < (unsigned int)basis.mMax || rho.n_cols < (unsigned int)basis.mMax) {
+        std::cerr << "Erreur : La matrice rho est trop petite par rapport à mMax !" << std::endl;
+        return arma::zeros(nbR, nbZ);
+    }
+
+    arma::mat result = arma::zeros(nbR, nbZ);
+    int a = 0,b = 0;
+    for (int m = 0; m < basis.mMax; m++)
+    {
+        for (int n = 0; n < basis.nMax(m); n++)
+        {
+            for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++)
+            {
+
+                b = 0;
+
+                for (int mp = 0; mp < basis.mMax; mp++)
+                {
+
+                    for (int np = 0; np < basis.nMax(mp); np++)
+                    {
+                        for (int n_zp = 0; n_zp < basis.n_zMax(mp, np); n_zp++)
+                        {
+                            arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
+                            arma::mat funcB = basis.basisFunc(mp, np, n_zp, zVals, rVals);
+
+                            if (funcA.has_nan() || funcB.has_nan()) {
+                                std::cout << "NaN détecté dans basisFunc pour m=" << m << ", n=" << n << ", n_z=" << n_z << std::endl;
                             }
+                            
+                            if(m==mp) result += funcA % funcB * rho(a, b);
+                            
 
                             b++;
 
@@ -111,18 +176,17 @@ arma::mat rho_kronecker(const arma::vec rVals, const arma::vec zVals, int nbR, i
 
     arma::mat result = arma::zeros(nbR, nbZ);
     int a,b, offset;
-    BENCH_START(bench_kronecker);
+    offset = 0;
     for (int m = 0; m < basis.mMax; m++)
     {
 
-        offset = 0;
-        for (int m_prim = 0; m_prim < m; ++m_prim) {
-            int n_primMax = basis.nMax(m_prim);
-            for (int n_prim = 0; n_prim < n_primMax; ++n_prim) {
+        int n_primMax = 0;
+        if(0 < m) n_primMax = basis.nMax(m-1);
+        for (int n_prim = 0; n_prim < n_primMax; ++n_prim) {
                 // On somme les n_zMax pour chaque n (et non une multiplication)
-                offset += basis.n_zMax(m_prim, n_prim); 
-            }
+                offset += basis.n_zMax(m, n_prim); 
         }
+        
 
         a = offset;
 
@@ -757,6 +821,125 @@ arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, in
     }
    
     BENCH_END(bench_fabulous);
+
+    return result;
+}
+
+arma::mat rho_ultimate(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ) {
+
+    Basis basis(BR, BZ, N, Q);
+
+    arma::mat rho;
+    if (!rho.load("rho.arma", arma::arma_ascii)) {
+        std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
+        return arma::zeros(nbR, nbZ);
+    }
+
+    // =========================================================================
+    // OPTIMISATION 1 : MÉMOÏSATION 1D EXTRÊME
+    // On évalue les polynômes une SEULE fois pour chaque dimension séparément.
+    // =========================================================================
+
+    // Recherche de la valeur maximale de n_z pour la pré-allocation
+    int max_nz = 0;
+    for (int m = 0; m < basis.mMax; m++) {
+        for (int n = 0; n < basis.nMax(m); n++) {
+            if (basis.n_zMax(m, n) > max_nz) {
+                max_nz = basis.n_zMax(m, n);
+            }
+        }
+    }
+
+    // Précalcul de toutes les fonctions zPart (stockées dans un std::vector)
+    std::vector<arma::vec> Z_memo(max_nz);
+    for (int nz = 0; nz < max_nz; ++nz) {
+        Z_memo[nz] = basis.zPart(zVals, nz);
+    }
+
+    // Précalcul de toutes les fonctions rPart
+    std::vector<std::vector<arma::vec>> R_memo(basis.mMax);
+    for (int m = 0; m < basis.mMax; ++m) {
+        R_memo[m].resize(basis.nMax(m));
+        for (int n = 0; n < basis.nMax(m); ++n) {
+            R_memo[m][n] = basis.rPart(rVals, m, n);
+        }
+    }
+
+    // =========================================================================
+    // INDEXATION DES ÉTATS (Comme dans Fabulous)
+    // =========================================================================
+
+    struct BasisState { int m; int n; int n_z; };
+    std::vector<BasisState> states;
+    std::vector<std::vector<int>> indices_par_m(basis.mMax);
+
+    int idx = 0;
+    int max_K_m = 0;
+    for (int m = 0; m < basis.mMax; m++) {
+        for (int n = 0; n < basis.nMax(m); n++) {
+            for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
+                states.push_back({m, n, n_z});
+                indices_par_m[m].push_back(idx++);
+            }
+        }
+        if ((int)indices_par_m[m].size() > max_K_m) {
+            max_K_m = indices_par_m[m].size();
+        }
+    }
+
+    if (rho.n_rows < (unsigned int)states.size() || rho.n_cols < (unsigned int)states.size()) {
+        return arma::zeros(nbR, nbZ);
+    }
+
+    // =========================================================================
+    // OPTIMISATION 2 : ZÉRO ALLOCATION DYNAMIQUE
+    // On alloue le buffer F_global une unique fois pour le pire des cas (max_K_m).
+    // =========================================================================
+    
+    arma::mat F_global(nbR * nbZ, max_K_m);
+    arma::mat result = arma::zeros(nbR, nbZ);
+
+    for (int m = 0; m < basis.mMax; ++m) {
+        const auto& indices = indices_par_m[m];
+        int K_m = indices.size();
+        if (K_m == 0) continue;
+
+        // Création d'une "Vue" sur la mémoire pré-allouée : AUCUN malloc ici !
+        arma::mat F_m = F_global.head_cols(K_m);
+
+        // Remplissage quasi instantané : on ne fait qu'un produit externe de vecteurs 1D
+        for (int k = 0; k < K_m; ++k) {
+            const auto& state = states[indices[k]];
+            F_m.col(k) = arma::vectorise(Z_memo[state.n_z] * R_memo[state.m][state.n].t());
+        }
+
+        // Extraction du bloc de densité
+        arma::uvec idx_vec = arma::conv_to<arma::uvec>::from(indices);
+        arma::mat rho_m = rho.submat(idx_vec, idx_vec);
+
+        // =========================================================================
+        // OPTIMISATION 3 : CHOLESKY (TRMM) au lieu de GEMM
+        // Divise par 2 le nombre d'opérations flottantes si la matrice est définie positive.
+        // =========================================================================
+        
+        arma::mat L;
+        // Arma::chol renvoie true si rho_m est définie positive.
+        if (arma::chol(L, rho_m, "lower")) {
+            // rho_m = L * L^T -> On multiplie par L (Triangle inférieur -> BLAS TRMM)
+            arma::mat B = F_m * L; 
+            
+            // La diagonale de B * B^T est la somme des carrés des lignes
+            arma::vec diag_R_m = arma::sum(arma::square(B), 1);
+            result += arma::reshape(diag_R_m, nbR, nbZ);
+        } 
+        else {
+            // Fallback robuste : si rho_m n'est que semi-définie (ex: zéros parfaits),
+            // la décomposition de Cholesky échouera. On repasse sur le calcul classique (GEMM).
+            arma::mat A = F_m * rho_m;
+            arma::vec diag_R_m = arma::sum(A % F_m, 1);
+            result += arma::reshape(diag_R_m, nbR, nbZ);
+        }
+    }
 
     return result;
 }

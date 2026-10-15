@@ -106,4 +106,6 @@ arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, 
 
 arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
 
+arma::mat rho_ultimate(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+
 #endif

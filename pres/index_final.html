@@ -1357,186 +1357,363 @@ arma::mat Basis::basisFunc(int m , int n , int n_z , arma::vec z, arma::vec r) {
 # IV. - Implémentation de la densité
 
 .hcenter.vcenter.large[
-1. Méthode naïve
+1. Approche naïve et diagnostic des performances
 
-2. Optimisations et algorithmes
+2. Linéarisation et propriétés physiques de `$\rho$`
 
-3. Analyse des performances (accélération / ralentissements)
+3. Mémoïsation et compromis Temps / Mémoire (`rho_memory_max`)
+
+4. Vectorisation algébrique et BLAS (`rho_fabulous`)
 ]
 
 ---
 
-# IV.1. - Méthode naïve : Algorithme
+# IV.1.1 - Approche naïve : De la formule au code
 
-Rappel de la formule de la densité locale :
-`$$\rho(\mathbf{r}) = \sum_{m, n_a, n_{za}} \sum_{n_b, n_{zb}} \rho_{ab} \psi_{m, n_a, n_{za}}(\mathbf{r}) \psi^*_{m, n_b, n_{zb}}(\mathbf{r})$$`
+Rappel de l'expression théorique de la densité locale sur la grille spatiale `$(z, r_\perp)$` :
+
+`$$\rho(\mathbf{r}) = \sum_{a} \sum_{b} \rho_{ab} \, \psi_a(\mathbf{r}) \psi^*_b(\mathbf{r})$$`
 
 .block[
-### Algorithme naïf (Boucles imbriquées)
-On parcourt l'ensemble des états quantiques `$a$` et `$b$`, et pour chaque état, on calcule les fonctions d'onde sur toute la grille spatiale `$(z, r_\perp)$`.
+### Principe de l'algorithme naïf (`rho_naif`)
+Chaque état quantique `$a$` (ou `$b$`) est un triplet `$(m, n, n_z)$`. Parcourir tous les couples `$(a, b)$` revient naturellement à écrire **6 boucles `for` imbriquées** (3 pour `$a$`, 3 pour `$b$`).
+]
+
+* **Rôle dans le projet** : Cette implémentation directe traduit littéralement l'équation mathématique. Elle sert de **référence absolue (vérité terrain)** pour valider la justesse numérique de toutes nos optimisations suivantes via les tests unitaires.
+
+```cpp
+arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nbZ);
+```
+
+---
+
+# IV.1.2 - Approche naïve : Implémentation (`rho_naif`)
+
+```cpp
+arma::mat result = arma::zeros(nbR, nbZ);
+int a = 0, b = 0;
+
+// Triplet quantique a = (m, n, n_z)
+for (int m = 0; m < basis.mMax; m++) {
+  for (int n = 0; n < basis.nMax(m); n++) {
+    for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
+      b = 0;
+      // Triplet quantique b = (mp, np, n_zp)
+      for (int mp = 0; mp < basis.mMax; mp++) {
+        for (int np = 0; np < basis.nMax(mp); np++) {
+          for (int n_zp = 0; n_zp < basis.n_zMax(mp, np); n_zp++) {
+
+            arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
+            arma::mat funcB = basis.basisFunc(mp, np, n_zp, zVals, rVals);
+
+            result += (funcA % funcB) * rho(a, b);
+            b++;
+          }
+        }
+      }
+      a++;
+    }
+  }
+}
+```
+
+---
+
+# IV.1.3 - Diagnostic : Pourquoi est-ce si lent ?
+
+Si `$N_{\text{états}}$` est le nombre total de triplets `$(m, n, n_z)$`, cette approche souffre de **3 défauts majeurs** :
+
+1. **Explosion combinatoire (`$O(N_{\text{états}}^2)$`)** : 
+   On évalue aveuglément tous les couples `$(a, b)$`, même lorsque le coefficient physique `$\rho_{ab}$` est nul.
+2. **Recalculs massifs des polynômes** : 
+   `basisFunc` (qui évalue Hermite, Laguerre et les exponentielles sur toute la grille 2D) est appelée **`$2 \times N_{\text{états}}^2$` fois** au lieu de `$N_{\text{états}}$` fois !
+3. **Ignorance des symétries** : 
+   Le code recalcule intégralement `$(b, a)$` après avoir calculé `$(a, b)$`.
+
+<br>
+
+.alert.animated.fadeInUp[
+**Constat :** La majorité écrasante du temps CPU est gaspillée à recalculer des fonctions de base déjà connues pour les multiplier par `$\rho_{ab} = 0$`.
+]
+
+---
+
+# IV.2.1 - Propriétés physiques de la matrice `$\rho$`
+
+Pour optimiser, exploitons la structure mathématique de la matrice de densité `$\rho$` :
+
+.row[
+.column.w50[
+### 1. Diagonale par blocs (`$m = m'$`)
+Par symétrie azimutale du noyau :
+`$$\rho_{ab} = \delta_{m_a, m_b} \rho_{ab}$$`
+Si `$m \neq m'$`, alors `$\rho_{ab} = 0$`. Seuls les blocs diagonaux sont non nuls.
+
+### 2. Symétrique (`$\rho_{ab} = \rho_{ba}$`)
+Les termes `$a \neq b$` et `$b \neq a$` donnent exactement la même contribution :
+`$$\rho_{ab}\psi_a\psi_b + \rho_{ba}\psi_b\psi_a = 2\,\rho_{ab}\psi_a\psi_b$$`
+]
+
+.column.w5[
+&nbsp;
+]
+
+.column.w45[
+<br>
+.hcenter[
+| | `$m'=0$` | `$m'=1$` | `...` | `$m_{\max}-1$` |
+|:---:|:---:|:---:|:---:|:---:|
+| **`$m=0$`** | **Bloc 0** | `0` | `...` | `0` |
+| **`$m=1$`** | `0` | **Bloc 1** | `...` | `0` |
+| **`...`** | `...` | `...` | `...` | `0` |
+| **`$m_{\max}-1$`** | `0` | `0` | `0` | **Bloc final** |
+]
+]
+]
+
+---
+
+# IV.2.2 - Linéarisation et Filtrage (`rho_linearized`)
+
+.block[
+### Étape 1 : Aplatir les 6 boucles en une table d'états 1D
+On associe chaque indice global `$i \in [0, N_{\text{états}}-1]$` à son triplet quantique `$(m, n, n_z)$` via un vecteur de structures `BasisState`.
 ]
 
 ```cpp
-int a = 0,b = 0;
+struct BasisState { int m; int n; int n_z; };
+std::vector<BasisState> states;
+
 for (int m = 0; m < basis.mMax; m++)
-{
-for (int n = 0; n < basis.nMax(m); n++)
-{
-for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++)
-{
-    b = 0;
-    for (int mp = 0; mp < basis.mMax; mp++)
-    {
-    for (int np = 0; np < basis.nMax(mp); np++)
-    {
-    for (int n_zp = 0; n_zp < basis.n_zMax(mp, np); n_zp++)
-    {
-        arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
-        arma::mat funcB = basis.basisFunc(mp, np, n_zp, zVals, rVals);
-        if(m == mp) result += funcA % funcB * rho(a, b);
-        b++;
-    }
-    }
-    }
-    a++;
-}
-}
-}
-```
-
----
-
-# IV.2. - Première Optimisation : factorisation de Kronecker
-
-
-.
-```cpp
-int a,b, offset;
-for (int m = 0; m < basis.mMax; m++)
-{
-
-    offset = 0;
-    for (int m_prim = 0; m_prim < m; ++m_prim) {
-        int n_primMax = basis.nMax(m_prim);
-        for (int n_prim = 0; n_prim < n_primMax; ++n_prim) {
-            // On somme les n_zMax pour chaque n (et non une multiplication)
-            offset += basis.n_zMax(m_prim, n_prim); 
-        }
-    }
-    a = offset;
-
-    for (int n = 0; n < basis.nMax(m); n++)
-    {
+  for (int n = 0; n < basis.nMax(m); n++)
     for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++)
-    {
-        b = offset;
-        for (int np = 0; np < basis.nMax(m); np++)
-        {
-        for (int n_zp = 0; n_zp < basis.n_zMax(m, np); n_zp++)
-        {
+      states.push_back({m, n, n_z});
 
-            arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
-            arma::mat funcB = basis.basisFunc(m, np, n_zp, zVals, rVals);
-
-            result += funcA % funcB * rho(a, b);
-            b++;
-                            
-        }
-        }
-        a++;
-    }
-    }
-}
+int totalStates = states.size();
 ```
+
+* **Avantage immédiat** : On passe de 6 boucles imbriquées à 2 boucles simples sur `i` et `j`, et on peut sortir le calcul de `funcA` de la boucle interne sur `j` !
 
 ---
 
-# IV.3. - Deuxième Optimisation : Linearisation
+# IV.2.3 - Exploitation de `$m = m'$` et de la symétrie
 
+En combinant le filtrage azimutal (`m == mp`) et la symétrie (`j` commence à `i`) :
 
-.
 ```cpp
-
-//Création d'un tableau pour savoir à quel triplet quantique un numéro est associé
-std::vector<BasisState> states;
-for (int m = 0; m < basis.mMax; m++) {
-    for (int n = 0; n < basis.nMax(m); n++) {
-        for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
-            states.push_back({m, n, n_z});
-        }
-    }
-}
-
-int totalStates = states.size();
 arma::mat result = arma::zeros(nbR, nbZ);
 
-//somme sur a et b nommé i et j dans le code
 for (int i = 0; i < totalStates; ++i) {
-    int m = states[i].m;
-    int n = states[i].n;
-    int n_z = states[i].n_z;
-
+    int m = states[i].m, n = states[i].n, n_z = states[i].n_z;
+    
+    // funcA n'est calculée qu'UNE SEULE fois par ligne i !
     arma::mat funcA = basis.basisFunc(m, n, n_z, zVals, rVals);
-    for (int j = 0; j < totalStates; ++j) {
-        int mp = states[j].m;
 
-        if (m == mp) {
+    // Boucle triangulaire supérieure (j >= i) grâce à la symétrie
+    for (int j = i; j < totalStates; ++j) {
+        if (m == states[j].m) { // Filtre azimutal : bloc diagonal uniquement
             double rho_val = rho(i, j);
-                
-                
-            int np = states[j].n;
-            int n_zp = states[j].n_z;
+            arma::mat funcB = basis.basisFunc(m, states[j].n, states[j].n_z, zVals, rVals);
 
-            arma::mat funcB = basis.basisFunc(mp, np, n_zp, zVals, rVals);
-            result += funcA % funcB * rho_val;
+            if (i == j) result += (funcA % funcB) * rho_val;       // Diagonale
+            else        result += 2.0 * (funcA % funcB) * rho_val; // Hors-diagonale (x2)
         }
     }
 }
 ```
 
+.alert[
+**Limite restante :** Dans la boucle sur `j`, la fonction `funcB` est toujours recalculée à chaque itération, et on teste inutilement des `j` où `m != states[j].m`.
+]
+
 ---
 
-# IV.4. - Troisième Optimisation : Symétrie de la matrice 
+# IV.3.1 - Mémoïsation et Partitionnement (`rho_memory_max`)
 
+Pour éliminer **100 % des recalculs** de fonctions de base et **100 % des tests inutiles** sur `$m$` :
 
-.
+.row[
+.column.w45[
+.block[
+### 1. Mémoïsation (`func`)
+On précalcule `basisFunc` une unique fois pour chaque état `$i$`, et on stocke les matrices dans `std::vector<arma::mat> func`.
+* **Coût d'accès** : `$O(1)$` en lecture.
+]
+]
+
+.column.w10[
+&nbsp;
+]
+
+.column.w45[
+.block[
+### 2. Partitionnement (`indices_par_m`)
+On regroupe les indices `$i$` par valeur de `$m$` dans une table `indices_par_m[m]`.
+* **Gain** : On itère directement dans chaque bloc diagonal `$m$`.
+]
+]
+]
+
 ```cpp
-
-// 1. Création d'un tableau pour savoir à quel triplet quantique un numéro est associé
 std::vector<BasisState> states;
-for (int m = 0; m < basis.mMax; m++) {
-    for (int n = 0; n < basis.nMax(m); n++) {
-        for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
-            states.push_back({m, n, n_z});
-        }
-    }
-}
+std::vector<arma::mat> func;
+std::vector<std::vector<int>> indices_par_m(basis.mMax);
 
-int totalStates = states.size();
+int idx = 0;
+for (int m = 0; m < basis.mMax; m++) {
+  for (int n = 0; n < basis.nMax(m); n++) {
+    for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
+      states.push_back({m, n, n_z});
+      func.push_back(basis.basisFunc(m, n, n_z, zVals, rVals)); // Précalcul unique !
+      indices_par_m[m].push_back(idx++);                        // Classement par bloc m
+    }
+  }
+}
+```
+
+---
+
+# IV.3.2 - Calcul principal et Analyse HPC (`rho_memory_max`)
+
+```cpp
 arma::mat result = arma::zeros(nbR, nbZ);
 
-// 2. Boucle optimisée par blocs m et exploitant la symétrie i < j
-for (int i = 0; i < totalStates; i++) {
-    int i = indices[idx_i];
-    arma::mat funcA = basis.basisFunc(states[i].m, states[i].n, states[i].n_z, zVals, rVals);
+for (int m = 0; m < basis.mMax; ++m) {
+    const auto& indices = indices_par_m[m];
+    int size = indices.size();
 
-    // A. Traitement du terme diagonal (i == j)
-    double rho_ii = rho(i, i);
-    if (rho_ii != 0.0) result += (funcA % funcA) * rho_ii;
-            
-    // B. Traitement des termes symétriques (j > i) -> On multiplie par 2
-    for (int j = i + 1; j < totalStates; j++) {
-        double rho_ij = rho(i, j); // Égal à rho(j, i) par symétrie
+    for (int idx_i = 0; idx_i < size; ++idx_i) {
+        int i = indices[idx_i];
+        result += (func[i] % func[i]) * rho(i, i); // Terme diagonal
 
-        if (rho_ij != 0.0) {
-            arma::mat funcB = basis.basisFunc(states[j].m, states[j].n, states[j].n_z, zVals, rVals);
-            result += 2.0 * (funcA % funcB) * rho_ij;
+        for (int idx_j = idx_i + 1; idx_j < size; ++idx_j) {
+            int j = indices[idx_j];
+            result += 2.0 * (func[i] % func[j]) * rho(i, j); // Termes symétriques
         }
     }
 }
 ```
+
+.block[
+### Compromis Temps / Mémoire (Space-Time Tradeoff)
+* **Empreinte mémoire négligeable** : Stocker `$N_{\text{états}}$` matrices de taille `$N_r \times N_z$` ne représente que quelques mégaoctets, ce qui tient aisément dans les **caches L2/L3** d'un processeur moderne.
+* **Goulot d'étranglement résiduel** : Les doubles boucles `for` effectuent des opérations matricielles élément par élément (**niveau BLAS 1 / 2**), limitées par la bande passante mémoire (*Memory-Bound*). Peut-on transformer cette somme en **produit matriciel pur (BLAS 3)** ?
+]
+
 ---
 
+# IV.4.1 - `rho_fabulous` : L'Algèbre cachée derrière la somme
+
+Pour passer à la vitesse supérieure, reformulons le calcul d'un bloc `$m$` sous forme **matricielle**.
+Soit `$S = N_r \times N_z$` le nombre total de points de la grille spatiale 2D, et `$K_m$` le nombre d'états dans le bloc `$m$`.
+
+.block[
+### 1. Vectorisation de la grille spatiale (Matrice `$F_m$`)
+En "aplatissant" chaque grille 2D `$\psi_k(z, r)$` en un vecteur colonne de taille `$S$` (via `arma::vectorise`), on construit la matrice `$F_m \in \mathbb{R}^{S \times K_m}$` dont chaque colonne `$k$` est un état de base :
+
+`$$F_m = \begin{pmatrix} | & | & & | \\ \text{vec}(\psi_1) & \text{vec}(\psi_2) & \cdots & \text{vec}(\psi_{K_m}) \\ | & | & & | \end{pmatrix} \in \mathbb{R}^{S \times K_m}$$`
+]
+
+En chaque point spatial `$p \in \{1, \dots, S\}$` (ligne `$p$` de `$F_m$`), la densité du bloc `$m$` s'écrit :
+
+`$$\rho^{(m)}_p = \sum_{i=1}^{K_m} \sum_{j=1}^{K_m} (F_m)_{p, i} \, (\rho_m)_{i, j} \, (F_m)_{p, j} = \left( F_m \, \rho_m \, F_m^T \right)_{p, p}$$`
+
+.alert[
+**Révélation algébrique :** Le vecteur densité recherché n'est autre que la **diagonale** du produit matriciel `$R_m = F_m \, \rho_m \, F_m^T$` !
+]
+
+---
+
+# IV.4.2 - L'Astuce Algébrique : Éviter la matrice `$S \times S$`
+
+Calculer explicitement `$R_m = F_m \, \rho_m \, F_m^T$` serait catastrophique : `$R_m$` est de taille `$S \times S$` !
+*(Exemple : pour une grille `$300 \times 300$`, `$S = 90\,000$`, donc `$R_m$` aurait `$8{,}1 \times 10^9$` éléments `$\approx 64\text{ Go}$` de RAM !)*
+
+.block[
+### Comment extraire `$\text{diag}(A \, F_m^T)$` sans calculer `$A \, F_m^T$` ?
+Posons la matrice intermédiaire **`$A = F_m \, \rho_m \in \mathbb{R}^{S \times K_m}$`** (très compacte car `$K_m \ll S$`).
+Par définition du produit matriciel, le terme diagonal `$p$` de `$A \, F_m^T$` vaut :
+
+`$$\left(A \, F_m^T\right)_{p, p} = \sum_{k=1}^{K_m} A_{p, k} \, (F_m^T)_{k, p} = \sum_{k=1}^{K_m} A_{p, k} \, (F_m)_{p, k} = \sum_{k=1}^{K_m} (A \odot F_m)_{p, k}$$`
+]
+
+<br>
+
+.row[
+.column.w45[
+**Identité fondamentale :**
+`$$\text{diag}\!\left(A \, F_m^T\right) = \text{sum}\!\left(A \odot F_m, \text{axe}=1\right)$$`
+où `$\odot$` (`%` dans Armadillo) est le produit de Hadamard et `sum(..., 1)` additionne les colonnes ligne par ligne.
+]
+
+.column.w10[
+&nbsp;
+]
+
+.column.w45[
+.alert[
+**Gain algorithmique :**
+- **Mémoire** : `$O(S \times K_m)$` au lieu de `$O(S^2)$` (Zéro matrice `$S \times S$` !)
+- **Calcul de `$A$`** : Un unique appel **DGEMM (BLAS 3)** (`F_m * rho_m`).
+]
+]
+]
+
+---
+
+# IV.4.3 - Implémentation commentée de `rho_fabulous`
+
+```cpp
+for (int m = 0; m < basis.mMax; m++) {
+    const auto& indices = indices_par_m[m];
+    int K_m = indices.size();
+    if (K_m == 0) continue;
+
+    // 1. Construction de la matrice des états aplatis F_m (Taille : S x K_m)
+    arma::mat F_m(nbR * nbZ, K_m);
+    for (int k = 0; k < K_m; ++k) {
+        const auto& state = states[indices[k]];
+        F_m.col(k) = arma::vectorise(basis.basisFunc(state.m, state.n, state.n_z, zVals, rVals));
+    }
+
+    // 2. Extraction du bloc diagonal rho_m (Taille : K_m x K_m)
+    arma::uvec idx_vec = arma::conv_to<arma::uvec>::from(indices);
+    arma::mat rho_m = rho.submat(idx_vec, idx_vec);
+
+    // 3. Produit matriciel BLAS Niveau 3 (Taille : S x K_m)
+    arma::mat A = F_m * rho_m;
+
+    // 4. Astuce algébrique : Diagonale directe via Hadamard + Somme sur les colonnes
+    arma::vec diag_R_m = arma::sum(A % F_m, 1);
+
+    // 5. Remise en forme 2D (nbR x nbZ) et accumulation
+    result += arma::reshape(diag_R_m, nbR, nbZ);
+}
+```
+
+---
+
+# IV.4.4 - Bilan comparatif des algorithmes
+
+<br>
+
+.hcenter[
+| Algorithme | Boucles sur les états | Appels à `basisFunc` | Opération cœur | Niveau BLAS / Matériel |
+|:---|:---:|:---:|:---|:---|
+| **`rho_naif`** | 6 boucles (`$N_{\text{états}}^2$`) | `$2 \, N_{\text{états}}^2$` | `funcA % funcB * rho(a,b)` | Scalaire / Non-optimisé |
+| **`rho_linearized`** | 2 boucles (`$m = m'$`) | `$\approx N_{\text{états}} \times \bar{K}_m$` | `funcA % funcB * rho(i,j)` | BLAS 1 (Limité par recalculs) |
+| **`rho_memory_max`** | Par bloc `$m$` (`$j > i$`) | **`$N_{\text{états}}$`** (Mémoïsé) | `2 * (func[i] % func[j])` | BLAS 1/2 (*Memory-Bound*) |
+| **`rho_fabulous`** | **1 boucle sur `$m$`** | **`$N_{\text{états}}$`** | **`A = F_m * rho_m`** puis `sum(A % F_m, 1)` | **BLAS 3 (`DGEMM` / SIMD / Multi-thread)** |
+]
+
+<br>
+
+.block[
+### Pourquoi `rho_fabulous` domine sur les grandes grilles ?
+En remplaçant la double boucle C++ par le produit matriciel `F_m * rho_m`, Armadillo délègue le calcul à **OpenBLAS / MKL**. Le processeur exploite alors pleinement la vectorisation matérielle (**AVX-512 / SIMD**), le **multi-threading** sur tous les cœurs et le découpage en blocs pour les caches L1/L2.
+]
+
+---
 # Résultats 
 
 
@@ -1566,6 +1743,53 @@ for (int i = 0; i < totalStates; i++) {
 1. Wrapper python
 2. Résultats et benchmarks
 ## 3. Outils de profilage
+
+---
+
+valgrind :
+
+```sh
+make
+valgrind
+```
+
+```valgrind
+==161699== HEAP SUMMARY:
+==161699==     in use at exit: 0 bytes in 0 blocks
+==161699==   total heap usage: 29,934,518 allocs, 29,934,518 frees, 52,791,166,540 bytes allocated
+==161699==
+==161699== All heap blocks were freed -- no leaks are possible
+==161699==
+==161699== For lists of detected and suppressed errors, rerun with: -s
+==161699== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
+perf :
+
+```
+make exec OPTIONS="-Wall -Wextra -Werror -Iinclude -O2 -g -fno-omit-frame-pointer -DBENCH"
+# Temps, IPC, cache-misses (3 répétitions)
+perf stat -r 3 -e cycles,instructions,cache-references,cache-misses,branch-misses ./exec
+
+# Où passe le temps
+perf record -F 999 --call-graph dwarf ./exec
+perf report --no-children
+```
+
+Pour voir où il passait le temps, le problème était que l'on ne voyait que des adresses
+
+```
+    14,539,564,037      armv8_pmuv3_0/cycles/u                                                  ( +-  0.15% )
+     1,020,732,189      armv8_pmuv3_1/cycles/u                                                  ( +- 17.32% )  (17.29%)
+    76,090,760,718      armv8_pmuv3_0/instructions/u     #    5.23  insn per cycle              ( +-  0.00% )
+       391,055,998      armv8_pmuv3_1/instructions/u     #    0.38  insn per cycle              ( +- 16.79% )  (17.29%)
+    25,874,426,152      armv8_pmuv3_0/cache-references/u                                        ( +-  0.06% )
+       104,312,410      armv8_pmuv3_1/cache-references/u                                        ( +- 16.36% )  (17.29%)
+       134,361,361      armv8_pmuv3_0/cache-misses/u     #    0.52% of all cache refs           ( +-  3.09% )
+         1,541,754      armv8_pmuv3_1/cache-misses/u     #    1.48% of all cache refs           ( +- 15.62% )  (17.29%)
+        31,914,939      armv8_pmuv3_0/branch-misses/u                                           ( +-  0.09% )
+            58,606      armv8_pmuv3_1/branch-misses/u                                           ( +- 15.20% )  (17.29%)
+```
 
     </textarea>
 
