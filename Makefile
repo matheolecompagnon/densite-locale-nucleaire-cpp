@@ -19,30 +19,35 @@ test_cpp     := bin/tests.cpp
 test_obj     := bin/tests.o
 test_exec    := bin/test
 
-.PHONY: all debug release run test bench perf clean
+.PHONY: all debug release run run-release test generate bench perf clean
 
 all: debug
 
 debug: OPTIONS := $(OPTIONS_DEBUG)
-debug: run
+debug: $(main_exec)
 
 release: OPTIONS := $(OPTIONS_RELEASE)
-release: run
+release: $(main_exec)
 
 # ---------- Benchmark ----------
 
 bench: OPTIONS := $(OPTIONS_RELEASE) -DBENCH
-bench: run
+bench: $(main_exec)
 
 # ------------- Perf ------------
 
-perf: OPTIONS := $(OPTIONS_COMMON) -O0 -g -fno-omit-frame-pointer
+perf: OPTIONS := $(OPTIONS_COMMON) -O2 -g -fno-omit-frame-pointer
 perf: $(main_exec)
 	perf record -F 999 -g ./$(main_exec) $(ARGS)
 	perf report --no-children --stdio 2>/dev/null | head -50
 
 # ---------- Programme principal ----------
-run: $(main_exec)
+run: debug
+	@printf "\n\n====== Debut Affichage Programme DEBUG ======\n\n"
+	@./$(main_exec) $(ARGS)
+	@printf "\n\n========== Fin Affichage Programme ==========\n\n"
+
+run-release: release
 	@printf "\n\n========== Debut Affichage Programme ==========\n\n"
 	@./$(main_exec) $(ARGS)
 	@printf "\n\n========== Fin Affichage Programme ==========\n\n"
@@ -68,17 +73,16 @@ $(test_cpp): $(test_headers) | bin
 
 
 # ---------- Module Python & Script de génération ----------
-generate: $(PY_TARGET)
-	
-	@printf "\n\n========== Lancement de generation.py ==========\n\n"
-	python3 generation.py
-	@printf "\n\n===============================================\n\n"
-
-$(PY_TARGET): $(PY_OBJS) $(objects)
-	$(CXX) $(OPTIONS) -shared $^ -o $@ $(LDLIBS)
-
-bin/wrapper.o: src/wrapper.cpp | bin
-	$(CXX) $(OPTIONS) $(PYTHON_INCLUDES) $(NUMPY_INCLUDES) $(DEPFLAGS) -c $< -o $@
+#generate: $(PY_TARGET)
+#	@printf "\n\n========== Lancement de generation.py ==========\n\n"
+#	python3 generation.py
+#	@printf "\n\n===============================================\n\n"
+#
+#$(PY_TARGET): $(PY_OBJS) $(objects)
+#	$(CXX) $(OPTIONS) -shared $^ -o $@ $(LDLIBS)
+#
+#bin/wrapper.o: src/wrapper.cpp | bin
+#	$(CXX) $(OPTIONS) $(PYTHON_INCLUDES) $(NUMPY_INCLUDES) $(DEPFLAGS) -c $< -o $@
 
 
 # ---------- Compilation des sources ----------
