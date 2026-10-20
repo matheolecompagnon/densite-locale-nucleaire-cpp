@@ -19,7 +19,7 @@ test_cpp     := bin/tests.cpp
 test_obj     := bin/tests.o
 test_exec    := bin/test
 
-.PHONY: all debug release run run-release test generate bench perf clean
+.PHONY: all debug release run run-release test bench perf clean
 
 all: debug
 
