@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
     arma::wall_clock tps_exec;
     tps_exec.tic();
 
-    // Mode profilage : ./exec <algo>
+    // Mode profilage : ./model??? <algo>
     if (argc > 1) {
         std::string algo = argv[1];
         int n = 100;
@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
         std::cout << "=== Mode profilage ===" <<std::endl;
         std::cout << "Algorithme : " << algo << std::endl;
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             arma::mat res;
 
             if (algo == "naif"){res = rho_naif(r, z, n, n);}

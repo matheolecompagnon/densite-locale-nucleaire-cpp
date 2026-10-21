@@ -9,6 +9,7 @@
 #define BR 2.829683956491218
 #define N 14
 #define Q 1.3
+#define RHO_FILE "data/rho.arma"
 
 Bench bench_naif, bench_kronecker, bench_factorized, bench_linearized, bench_linearized_again, 
 bench_optimized_m, bench_symmetric, bench_symmetric_optimized, bench_memory_max, bench_fabulous,
@@ -33,7 +34,7 @@ arma::mat rho_naif(const arma::vec rVals, const arma::vec zVals, int nbR, int nb
     Basis basis(BR, BZ, N, Q);
 
     arma::mat rho;
-    if (!rho.load("rho.arma", arma::arma_ascii)) {
+    if (!rho.load(RHO_FILE, arma::arma_ascii)) {
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         // Optionnel : créer une matrice par défaut pour tester
         // rho = arma::eye(basis.mMax, basis.mMax);
@@ -121,7 +122,7 @@ arma::mat rho_kronecker(const arma::vec rVals, const arma::vec zVals, int nbR, i
     Basis basis(BR, BZ, N, Q);
 
     arma::mat rho;
-    if (!rho.load("rho.arma", arma::arma_ascii)) {
+    if (!rho.load(RHO_FILE, arma::arma_ascii)) {
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         // Optionnel : créer une matrice par défaut pour tester
         // rho = arma::eye(basis.mMax, basis.mMax);
@@ -219,7 +220,7 @@ arma::mat rho_factorized(const arma::vec rVals, const arma::vec zVals, int nbR, 
     Basis basis(BR, BZ, N, Q);
 
     arma::mat rho;
-    if (!rho.load("rho.arma", arma::arma_ascii)) {
+    if (!rho.load(RHO_FILE, arma::arma_ascii)) {
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         // Optionnel : créer une matrice par défaut pour tester
         // rho = arma::eye(basis.mMax, basis.mMax);
@@ -326,7 +327,7 @@ arma::mat rho_linearized(const arma::vec rVals, const arma::vec zVals, int nbR, 
     Basis basis(BR, BZ, N, Q);
 
     arma::mat rho;
-    if (!rho.load("rho.arma", arma::arma_ascii)) {
+    if (!rho.load(RHO_FILE, arma::arma_ascii)) {
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         return arma::zeros(nbR, nbZ);
     }
@@ -414,7 +415,7 @@ arma::mat rho_linearized_again(const arma::vec rVals, const arma::vec zVals, int
     Basis basis(BR, BZ, N, Q);
 
     arma::mat rho;
-    if (!rho.load("rho.arma", arma::arma_ascii)) {
+    if (!rho.load(RHO_FILE, arma::arma_ascii)) {
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         return arma::zeros(nbR, nbZ);
     }
@@ -497,7 +498,7 @@ arma::mat rho_optimized_m(const arma::vec rVals, const arma::vec zVals, int nbR,
     Basis basis(BR, BZ, N, Q);
 
     arma::mat rho;
-    if (!rho.load("rho.arma", arma::arma_ascii)) {
+    if (!rho.load(RHO_FILE, arma::arma_ascii)) {
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         return arma::zeros(nbR, nbZ);
     }
@@ -584,7 +585,7 @@ arma::mat rho_symmetric(const arma::vec rVals, const arma::vec zVals, int nbR, i
     Basis basis(BR, BZ, N, Q);
 
     arma::mat rho;
-    if (!rho.load("rho.arma", arma::arma_ascii)) {
+    if (!rho.load(RHO_FILE, arma::arma_ascii)) {
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         return arma::zeros(nbR, nbZ);
     }
@@ -670,7 +671,7 @@ arma::mat rho_symmetric_optimized(const arma::vec rVals, const arma::vec zVals, 
     Basis basis(BR, BZ, N, Q);
 
     arma::mat rho;
-    if (!rho.load("rho.arma", arma::arma_ascii)) {
+    if (!rho.load(RHO_FILE, arma::arma_ascii)) {
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         return arma::zeros(nbR, nbZ);
     }
@@ -763,7 +764,7 @@ arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, 
     Basis basis(BR, BZ, N, Q);
 
     arma::mat rho;
-    if (!rho.load("rho.arma", arma::arma_ascii)) {
+    if (!rho.load(RHO_FILE, arma::arma_ascii)) {
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         return arma::zeros(nbR, nbZ);
     }
@@ -862,7 +863,7 @@ arma::mat rho_fabulous(const arma::vec rVals, const arma::vec zVals, int nbR, in
     Basis basis(BR, BZ, N, Q);
 
     arma::mat rho;
-    if (!rho.load("rho.arma", arma::arma_ascii)) {
+    if (!rho.load(RHO_FILE, arma::arma_ascii)) {
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         return arma::zeros(nbR, nbZ);
     }
@@ -957,7 +958,7 @@ arma::mat rho_ultimate(const arma::vec rVals, const arma::vec zVals, int nbR, in
     Basis basis(BR, BZ, N, Q);
 
     arma::mat rho;
-    if (!rho.load("rho.arma", arma::arma_ascii)) {
+    if (!rho.load(RHO_FILE, arma::arma_ascii)) {
         std::cerr << "Erreur : impossible de charger le fichier 'rho.arma' !" << std::endl;
         return arma::zeros(nbR, nbZ);
     }
