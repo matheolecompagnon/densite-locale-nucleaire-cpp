@@ -2,7 +2,7 @@
 
 ## Règles
 
-- `main` est protégée : **seul [@matheo.lecompagnon] (modifiable) peut y fusionner**.
+- `main` est protégée : **seul [@matheo.lecompagnon] peut y fusionner**.
 - Aucun push direct sur `main`.
 - Toute modification passe par une **merge request** (MR).
 
@@ -24,6 +24,18 @@
 Format `type: description` (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`).
 Exemple : `fix: corrige la pagination`
 
+|Type|	Usage|	Effet sur la version|
+|:--|:--|:--|
+|feat|	nouvelle fonctionnalité|	MINOR|
+|fix|	correction de bug|	PATCH|
+|docs|	documentation uniquement|	aucun|
+|refactor|	réécriture sans changer le comportement|	aucun|
+|test|	ajout ou modification de tests|	aucun|
+|chore|	maintenance (dépendances, config, release)|	aucun|
+|perf|	amélioration de performance|	PATCH|
+|style|	mise en forme (espaces, virgules)|	aucun|
+
+
 ## Relecture
 
-[@matheo.lecompagnon] (modifiable) relit votre MR, peut demander des modifications, puis la fusionne.
+[@matheo.lecompagnon] relit votre MR, peut demander des modifications, puis la fusionne.
