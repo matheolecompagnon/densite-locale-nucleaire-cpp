@@ -1,1 +1,7 @@
 bin/
+build/
+__pycache__/
+*.o
+*.so
+*.pyc
+.venv/
