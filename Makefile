@@ -20,6 +20,7 @@
 CXX        ?= g++
 CXXTESTGEN ?= cxxtestgen
 PYTHON     ?= python3
+PY_NUMPY_INCLUDE := $(shell $(PYTHON) -c "import numpy; print(numpy.get_include())" 2>/dev/null)
 
 # ---------- Projet ----------
 main_exec    := model
@@ -35,7 +36,7 @@ FLAGS_debug   := $(COMMON) -g -O0 -fsanitize=address -fno-omit-frame-pointer
 FLAGS_release := $(COMMON) -O0
 FLAGS_bench   := $(FLAGS_release) -DBENCH
 FLAGS_perf    := $(COMMON) -O0 -g -fno-omit-frame-pointer
-FLAGS_python  := $(FLAGS_release) -fPIC
+FLAGS_python  := $(FLAGS_release) -fPIC -I$(PY_NUMPY_INCLUDE)
 
 exe_debug   := build/$(main_exec)-debug
 exe_release := build/$(main_exec)
