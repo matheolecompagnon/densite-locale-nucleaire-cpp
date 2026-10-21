@@ -1,1 +1,0 @@
-g++ -O2 -Wall -std=c++17 -fPIC -shared $(python3-config --includes)     src/wrapper.cpp src/basis.cpp src/poly.cpp     -o ipsdev$(python3-config --extension-suffix) -larmadillo -Iinclude

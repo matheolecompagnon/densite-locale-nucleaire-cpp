@@ -230,7 +230,7 @@ WARN_LINE_FORMAT       = "at line $line of file $file"
 
 WARN_LOGFILE           =
 
-INPUT                  = ../src ../tests/ ../include/ mainpage.md ../rho.arma ../tests_wrapper.py ../generation.py
+INPUT                  = ../src ../tests/ ../include/ mainpage.md ../rho.arma ../tests_wrapper.py ../python/jmmm/generation_wrapper_v0.py
 
 INPUT_ENCODING         = UTF-8
 

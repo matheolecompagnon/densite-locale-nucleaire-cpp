@@ -1,233 +1,187 @@
 # ipsdev
 
-Projet C++ de modélisation de la **densité nucléaire locale** $\rho(\mathbf{r})$ à partir d'une base d'oscillateur harmonique déformé en coordonnées cylindriques. Il s'appuie sur **Armadillo** pour l'algèbre linéaire, est validé par des tests unitaires **CxxTest**, dispose d'un mode benchmark et d'un wrapper Python optionnel.
+Modélisation en C++ de la **densité nucléaire locale** \(\rho(\mathbf{r})\) à partir d'une base d'oscillateur harmonique déformé en coordonnées cylindriques. Le projet utilise **Armadillo** pour l'algèbre linéaire, est validé par des tests unitaires **CxxTest**, dispose d'un mode benchmark et d'un module Python (**pybind11**).
 
-## Objectif
+## Principe & Objectif
 
-La densité nucléaire locale est définie par
+La densité nucléaire locale s'écrit :
 
-$$
-\rho(\mathbf{r}) = \sum_{a,b} \rho_{ab}\,\psi_a(\mathbf{r})\,\psi_b^*(\mathbf{r})
-$$
+\[\rho(\mathbf{r}) = \sum_{a,b} \rho_{ab}\,\psi_a(\mathbf{r})\,\psi_b^*(\mathbf{r})\]
 
-où les $\psi_{m,n,n_z}$ sont les fonctions de base, repérées par les nombres quantiques $(m, n, n_z)$ et les paramètres de déformation $b_\perp$ et $b_z$. Comme $\rho_{ab}$ est nul dès que $m_a \neq m_b$, la phase $e^{im\theta}$ s'élimine et l'on travaille avec la fonction réelle :
+Les fonctions de base \(\psi_{m,n,n_z}\) dépendent des nombres quantiques \((m, n, n_z)\) et des paramètres de déformation \(b_\perp\) et \(b_z\). Comme \(\rho_{ab}\) est nul dès que \(m_a \neq m_b\), la phase \(e^{im\theta}\) disparaît et on utilise la fonction réelle :
 
-$$
-\psi_{m,n,n_z}(r_\perp, z) = Z(z, n_z)\,R(r_\perp, m, n)
-$$
+\[\psi_{m,n,n_z}(r_\perp, z) = Z(z, n_z)\,R(r_\perp, m, n)\]
 
-- **Partie axiale** $Z(z, n_z)$ : fonction de Hermite, de paramètre $b_z$.
-- **Partie radiale** $R(r_\perp, m, n)$ : fonction de Laguerre généralisée, de paramètre $b_\perp$.
+* **Partie axiale** \(Z(z, n_z)\) : fonction de Hermite, de paramètre \(b_z\).
+* **Partie radiale** \(R(r_\perp, m, n)\) : fonction de Laguerre généralisée, de paramètre \(b_\perp\).
 
-Le but du projet est de **simuler ce calcul et de proposer des algorithmes pour évaluer $\phi$**, ce qui est réalisé ici. Cela passe par :
+La base est tronquée à partir des paramètres \(N\) et \(Q\), qui fixent les bornes `mMax`, `nMax[m]` et `n_zMax[m, n]` afin de ne conserver que les états utiles.
 
-1. **Les polynômes** de Hermite $H_n$ et de Laguerre généralisés $L_n^m$, évalués par relation de récurrence (`poly`).
-2. **Les fonctions de base** $Z$, $R$ et $\psi$ (`basis`).
-3. **La troncation de la base** : les bornes sur $m$, $n$ et $n_z$ sont déterminées à partir des paramètres $N$ et $Q$ (`mMax`, `nMax[m]`, `n_zMax[m, n]`), afin de ne conserver que les états utiles.
-4. **La simulation et le benchmark** (`simulation`, `bench`) pour calculer $\rho(\mathbf{r})$ et comparer les performances.
-
-Les fonctions de base sont aussi accessibles depuis Python grâce au wrapper (`ipsdev.phi`).
-
-## Structure du projet
-
-```
-.
-├── Makefile
-├── rho.arma        # Matrice rho du projet
-├── test_wrapper.py # Test du wrapper
-├── include/        # Headers (.h)
-├── doc/            # Documentation Doxygen
-├── src/            # Sources : main.cpp, basis.cpp, poly.cpp, simulation.cpp, bench.cpp, wrapper.cpp
-├── tests/          # Tests CxxTest : test_basis.h, test_mandatory.h, test_poly.h
-├── bin/            # Objets, dépendances (.d) et exécutable de test (généré)
-└── exec            # Exécutable principal (généré)
-```
+Le but du projet est de modéliser ce calcul et de proposer plusieurs algorithmes d'évaluation de \(\rho\), de la version naïve à la version `ultimate`, et de les comparer par benchmark. Cela passe par :
+1. **Les polynômes** de Hermite \(H_n\) et de Laguerre généralisés \(L_n^m\), évalués par relation de récurrence (`poly`).
+2. **Les fonctions de base** \(Z\), \(R\) et \(\psi\) (`basis`).
+3. **La troncation de la base** menée par la classe de gestion.
+4. **La simulation et le benchmark** (`simulation`, `bench`) pour calculer \(\rho(\mathbf{r})\) et comparer les performances.
 
 ## Dépendances
 
-| Dépendance | Rôle | Obligatoire |
+| Dépendance | Usage / Rôle | Obligatoire |
 |---|---|---|
-| `g++` | Compilateur C++ | Oui |
+| `g++` (C++17) | Compilateur C++ | Oui |
 | `make` | Outil de build | Oui |
 | **Armadillo** | Algèbre linéaire (`-larmadillo`) | Oui |
-| **CxxTest** | Tests unitaires (`cxxtestgen`) | Pour `make test` |
-| Python 3 + headers de dev | Compilation du wrapper (`python3-config`) | Pour le wrapper |
-
-Perf est aussi requis pour utiliser `make perf ARGS=...`
+| **CxxTest** | Tests unitaires (`cxxtestgen`) | Non (uniquement pour `make test`) |
+| Python 3 + headers de dev | Compilation du wrapper (`python3-config`) | Non (uniquement pour le wrapper) |
+| pybind11, NumPy | Support du module Python | Non |
+| `perf` | Profilage avec `make perf` | Non |
+| Doxygen | Génération de la documentation | Non |
 
 ### Installation
 
-**Debian / Ubuntu**
+**Debian / Ubuntu :**
 ```sh
 sudo apt install g++ make libarmadillo-dev cxxtest python3-dev
+pip install pybind11 numpy
 ```
 
-**macOS (Homebrew)**
+**macOS (Homebrew) :**
 ```sh
 brew install armadillo cxxtest
+pip install pybind11 numpy
 ```
 
 ## Utilisation
 
-```sh
-make            # Équivalent de `make debug`
-make debug      # Compile en debug puis lance le programme
-make release    # Compile en release puis lance le programme
-make run        # Compile (si nécessaire) et lance ./exec avec les options courantes
-make test       # Génère, compile et exécute les tests CxxTest (en debug)
-make bench      # Compile en release avec -DBENCH puis lance le programme
-make clean      # Supprime bin/ et l'exécutable exec
-make perf ARGS=fabulous # Lance l'analyse de Perf sur l'algorithme fabulous
-```
+Les arguments du programme se passent avec la variable `ARGS="..."`.
 
-## Documentation
+| Commande | Effet |
+|---|---|
+| `make` ou `make debug` | Compile en debug (ASan) vers `build/model-debug` |
+| `make release` | Compile en optimisé vers `build/model` |
+| `make bench` | Compile avec la variable `-DBENCH` vers `build/model-bench` |
+| `make run` | Compile et lance la version debug |
+| `make run-release` | Compile et lance la version release |
+| `make test` | Génère, compile et lance les tests CxxTest |
+| `make perf ARGS=fabulous` | Profile l'algorithme `fabulous` avec l'outil perf |
+| `make python` | Compile le module Python |
+| `make generate` | Lance le script de génération |
+| `make py-test` | Lance les tests Python (pytest) |
+| `make clean` | Supprime `bin/` et le module Python compilé |
 
-Pour compiler la documentation :
+*Note : `make clean` conserve les exécutables de `build/`. Les objets sont compilés par mode (`bin/basis-debug.o`, `bin/basis-release.o`, etc.), donc passer d'un mode à l'autre ne nécessite pas de nettoyage.*
 
-```sh
-cd doc
-doxygen
-```
+## Structure du projet
+
+.
+├── Makefile
+├── rho.arma        # Matrice rho du projet
+├── test_wrapper.py # Test du wrapper
+├── include/        # Headers C++ (.hpp / .h)
+├── src/            # Sources C++ (main, basis, poly, simulation, bench, wrapper)
+├── bindings/       # Code des bindings Python
+├── python/         # Package Python (contient le module compilé dans python/ipsdev/)
+├── tests/          # Tests CxxTest (test_*.h) et tests Python dans tests/python
+├── data/           # Contient rho.arma
+├── docs/           # Configuration et sortie Doxygen
+├── bin/            # Objets, dépendances (.d) et exécutable de test (généré)
+└── build/          # Exécutables finaux (généré)
 
 ## Tests
 
-Les tests sont écrits avec CxxTest dans `tests/`. `make test`.
+Les tests sont écrits avec CxxTest dans `tests/`. Pour ajouter une suite de tests, il suffit de créer un fichier nommé `tests/test_xxx.h` ; il sera automatiquement détecté et doit être ajouté à la variable `test_headers` du Makefile. Exécuter avec :
+```sh
+make test
+```
 
-Pour ajouter un fichier de test, créer `tests/test_xxx.h` et l'ajouter à la variable `test_headers` du Makefile.
+## Wrapper python
 
-## Wrapper Python
-
-Le wrapper génère un module Python (`ipsdev.cpython-3xx-....so`) :
+Pour compiler le wrapper python :
 
 ```sh
-g++ -O2 -Wall -std=c++17 -fPIC -shared $(python3-config --includes) \
-    src/wrapper.cpp src/basis.cpp src/poly.cpp \
-    -o ipsdev$(python3-config --extension-suffix) -larmadillo -Iinclude
+make python
 ```
+Le module compilé est automatiquement placé dans `build/`.
 
-Utilisation depuis Python (dans le dossier contenant le `.so`) :
+### Fonctions exposées (Module `ipsdev` et avancé `simulation_cpp`)
+En plus des exécutables natifs, le projet propose un module Python natif nommé `simulation_cpp` permettant d'appeler directement les cœurs de calcul optimisés depuis des scripts d'analyse ou de visualisation. Les enveloppes de liaison gèrent la conversion zéro-copie de `numpy.ndarray` vers `arma::vec` et inversement.
 
-```python
-import ipsdev
+Toutes les versions ne sont pas exposées, mais le module expose principalement :
+- `simulation_cpp.rho_naif(rVals, zVals, nbR, nbZ)`
+- `simulation_cpp.rho_linearized(rVals, zVals, nbR, nbZ)`
+- `simulation_cpp.rho_memory_max(rVals, zVals, nbR, nbZ)`
+- `simulation_cpp.rho_fabulous(rVals, zVals, nbR, nbZ)`
+- `phi(m, n, n_z, points, br=1.0, bz=1.0)` : valeurs de la fonction de base en une liste de points `(r, z)`.
 
-vals = ipsdev.phi(m, n, n_z, [(r0, z0), (r1, z1), ...], br=1.0, bz=1.0) # -> [phi(r0, z0), phi(r1, z1), ...]
-
-```
-
-## Benchmark
-
-Le benchmark compare plusieurs algorithmes de calcul de la densité $\rho(\mathbf{r})$. Il est lancé avec :
-
-```sh
-make bench
-```
-
-Cette commande compile avec `-DBENCH` et exécute le programme principal. Chaque algorithme est mesuré après **10 itérations de préchauffe**, puis moyenné sur **100 itérations**.
-
-### Résultats
-
-* **Nombre de préchauffes (Warmup) :** 10 itérations
-* **Nombre de mesures :** 60 itérations
-* **nbR** : 100
-* **nbZ** : 100
-
-| Algorithme    | Temps (s/res.) | Gain vs Naïf |
-|:--------------|---------------:|-------------:|
-| Naïf          |       2.114799 |         x1.0 |
-| Kroenecker    |       0.250359 |         x8.4 |
-| Factorized    |       0.154771 |        x13.7 |
-| Linearized    |       0.154739 |        x13.7 |
-| Linearized 2. |       0.249960 |         x8.5 |
-| Optimized     |       0.154670 |        x13.7 |
-| Symmetric     |       0.097446 |        x21.7 |
-| Sym. Opti.    |       0.097073 |        x21.8 |
-| Memory max    |       0.047831 |        x44.2 |
-| Fabulous      |       0.034142 |        x61.9 |
-| **Ultimate**  |   **0.013065** |   **x161.9** |
-
-
-Durée totale du benchmark : environ 739 s.
-
-### Lecture des résultats
-
-- L'algorithme **Fabulous** est le plus rapide : environ **68 fois plus rapide** que l'algorithme naïf, et environ 7 fois plus rapide que le meilleur des autres (*Memory max*).
-- Les algorithmes **Factorized**, **Linearized** et **Optimized** donnent des temps quasiment identiques (environ 0.54 s), de même que **Symmetric** et **Sym. Opti.** (environ 0.34 s).
-- **Kroenecker** et **Linearized 2.** se situent autour de 0.67 s.
-- Exploiter la symétrie du problème fait gagner environ 36 % par rapport à *Factorized*, et *Memory max* pousse le gain un peu plus loin.
-
-### Remarques
-
-- Les mesures ci-dessus ont été obtenues avec les options `OPTIONS_RELEASE`.
-- Les temps dépendent de la machine. À compléter : processeur, mémoire, version de `g++` et d'Armadillo.
-
-## Module C++ et Wrapper Python Avancé (`simulation_cpp`)
-
-En plus des exécutables natifs, le projet propose un module Python natif nommé `simulation_cpp` permettant d'appeler directement les cœurs de calcul optimisés depuis des scripts d'analyse ou de visualisation[cite: 3].
-
-### Fonctions exposées
-Le wrapper expose les principales versions du solveur de densité (mais pas toutes) :
-- `simulation_cpp.rho_naif(rVals, zVals, nbR, nbZ)`[cite: 3]
-- `simulation_cpp.rho_linearized(rVals, zVals, nbR, nbZ)`[cite: 3]
-- `simulation_cpp.rho_memory_max(rVals, zVals, nbR, nbZ)`[cite: 3]
-- `simulation_cpp.rho_fabulous(rVals, zVals, nbR, nbZ)`[cite: 3]
-
-### Exemple d'utilisation en Python
+### Exemple d'utilisation
 
 ```python
 import numpy as np
 import simulation_cpp
 
-# Définition de la grille radiale et axiale
 rVals = np.linspace(0.01, 10.0, 150)
 zVals = np.linspace(-10.0, 10.0, 150)
-nbR, nbZ = len(rVals), len(zVals)
 
-# Appel de la version ultra-optimisée (Fabulous / BLAS 3)
-rho_matrix = simulation_cpp.rho_fabulous(rVals, zVals, nbR, nbZ)
+rho = rho_fabulous(rVals, zVals, len(rVals), len(zVals))
+print(rho.shape)
+```
 
-print("Dimensions de la matrice de densité :", rho_matrix.shape)
+## Benchmark
 
-# État de la Documentation Doxygen - Projet IPSDEV
+Le benchmark compare plusieurs algorithmes de calcul de la densité \(\rho(\mathbf{r})\). Il est lancé avec :
+```sh
+make bench
+./build/model-bench
+```
 
-Ce document dresse le bilan de la documentation Doxygen mise en place pour l'ensemble du projet de modélisation de la densité nucléaire en C++ et son interface Python.
+### Méthodologie et Paramètres
+Chaque algorithme est mesuré après **10 itérations de préchauffe (Warmup)**, puis moyenné sur **60 itérations**, avec `nbR = 100` et `nbZ = 100`. Durée totale : environ 739 s.
 
+### Résultats de référence
 
-## 1. Couverture du Cœur de Calcul C++
+*Note : Les mesures ci-dessous ont été obtenues avec les options `OPTIONS_RELEASE`, qui ne sont pas optimisées à la compilation (`-O0`).*
 
-L'intégralité des fonctions de résolution et d'optimisation de la densité nucléaire est documentée selon les standards Doxygen (`@brief`, `@param`, `@return`, `@note`) :
+| Algorithme | Temps (s) | Gain vs naïf |
+|:---|---:|---:|
+| Naïf | 2.114799 | x1.0 |
+| Kronecker / Kroenecker | 0.250359 | x8.4 |
+| Linearized 2 | 0.249960 | x8.5 |
+| Linearized | 0.154739 | x13.7 |
+| Factorized | 0.154771 | x13.7 |
+| Optimized | 0.154670 | x13.7 |
+| Symmetric | 0.097446 | x21.7 |
+| Symmetric optimized / Sym. Opti. | 0.097073 | x21.8 |
+| Memory max | 0.047831 | x44.2 |
+| Fabulous | 0.034142 | x61.9 |
+| Ultimate | 0.013065 | x161.9 |
 
-* **Approches de base et filtrage :**
-  * `rho_naif` : Implémentation de référence à 6 boucles imbriquées.
-  * `rho_kronecker` : Exploitation de l'invariance azimutale via le filtre $m == mp$.
+### Spécifications de la machine de test
+* **Processeur :** Qualcomm Oryon (Snapdragon X Series, ARM64)
+* **Mémoire :** 16 Go LPDDR5x (dont 8 Go alloués à l'environnement Linux WSL utilisé pour le benchmark)
+* **Système d'exploitation :** Debian GNU/Linux (via WSL2)
+* **Version g++ :** g++ 14.2.0 (Debian)
+* **Version Armadillo :** Armadillo v14.2.3
 
-* **Stratégies de réorganisation :**
-  * `rho_factorized` : Utilisation d'un décalage (*offset*) pour cibler directement les blocs $m$.
-  * `rho_linearized` : Aplatissement de l'espace des états en un vecteur linéaire unique.
-  * `rho_linearized_again` : Variante à boucle unique (documentée avec la note de performance sur le surcoût des divisions/modulos).
-  * `rho_optimized_m` : Indexation préalable des états par blocs de moment cinétique $m$.
+## Documentation Technique (Doxygen)
 
-* **Optimisations mémoire et symétrie :**
-  * `rho_symmetric` & `rho_symmetric_optimized` : Exploitation de la symétrie des termes ($i \le j$) pour diviser les calculs par deux.
-  * `rho_memory_max` : Mémoïsation maximale des fonctions de base, avec une attention particulière portée sur l'optimisation des caches CPU et du **TLB (Translation Lookaside Buffer)** en HPC.
+L'intégralité des fonctions de résolution, d'optimisation et les structures du cœur de calcul C++ (`BasisState`, `Basis`) est documentée selon les standards Doxygen (`@brief`, `@param`, `@return`, `@note`).
 
-* **Niveaux supérieurs et mathématiques avancées :**
-  * `rho_fabulous` : Documentation détaillée sur l'utilisation de l'algèbre linéaire haut niveau et des routines **BLAS 3 (DGEMM)**, incluant une distinction claire avec les niveaux BLAS 1 et 2.
-  * `rho_ultimate` : Intégration de la décomposition de **Cholesky** (rappel d'analyse numérique du semestre 1 sur les matrices définies positives) et gestion des fallbacks.
+### Implémentations couvertes :
+* **Approches de base et filtrage :** `rho_naif` (référence à 6 boucles imbriquées) et `rho_kronecker` (filtre \(m == mp\) via invariance azimutale).
+* **Stratégies de réorganisation :** `rho_factorized` (décalage/offset par blocs \(m\)), `rho_linearized` (en vecteur linéaire unique) et sa variante `rho_linearized_again` (boucle unique avec surcoût de divisions/modulos), ainsi que `rho_optimized_m` (indexation par blocs de moment cinétique \(m\)).
+* **Optimisations mémoire et symétrie :** `rho_symmetric` & `rho_symmetric_optimized` (symétrie des termes \(i \le j\)) et `rho_memory_max` (mémoïsation maximale, optimisations des caches CPU et du **TLB (Translation Lookaside Buffer)** en HPC).
+* **Niveaux supérieurs :** `rho_fabulous` (utilisation des routines **BLAS 3 - DGEMM**) et `rho_ultimate` (décomposition de **Cholesky** sur matrices définies positives).
 
+### Génération de la documentation
+Le fichier de configuration (`Doxyfile`) étant dans le dossier `docs/`, la documentation technique technique HTML/LaTeX peut être générée par les commandes :
+```sh
+cd docs
+doxygen Doxyfile
+```
 
+## Annexes
 
-## 2. Structures et Classes
+### Contribuer
+Voir [CONTRIBUTING.md](CONTRIBUTING.md). L'historique des versions est dans [CHANGELOG.md](CHANGELOG.md).
 
-* **`BasisState`** : Structure représentant un état quantique unique par ses trois nombres quantiques $(m, n, n_z)$.
-* **`Basis`** : Classe de gestion de la base fonctionnelle (parties axiales $Z$ et radiales $R$).
-
-
-## 3. Documentation du Wrapper Python (`wrapper.cpp`)
-
-Le fichier d'interface C++/Python (`wrapper.cpp`) est entièrement documenté :
-* Description des fonctions utilitaires de conversion (zéro-copie de `numpy.ndarray` vers `arma::vec` et conversion inverse `arma::mat` vers NumPy).
-* Documentation des enveloppes de liaison (`wrap_rho_naif`, `wrap_rho_fabulous`, etc.) exposant le module natif `simulation_cpp` à l'interpréteur Python.
-
-## 4. Génération de la Documentation
-
-Si un fichier de configuration Doxygen (`Doxyfile`) est présent à la racine du projet, la documentation technique HTML/LaTeX peut être générée instantanément via la commande :
+### Licence
+Voir [LICENSE](LICENSE).
