@@ -11,7 +11,7 @@
 #  make run-release      compile et lance (release)  (ARGS="...")
 #  make test             tests unitaires CxxTest     -> build/test
 #  make python           module Python               -> build/simulation_cpp.so
-#  make generate         lance generation.py
+#  make generate         lance python/jmmm/generation_wrapper_v0.py
 #  make clean            supprime bin/ (build/ est conservé)
 # =============================================================================
 
@@ -120,8 +120,8 @@ $(PY_MODULE): src/wrapper.cpp $(objs_python) | build
 	$(CXX) $(FLAGS_python) -shared $(PY_INCLUDES) $^ -o $@ $(LDLIBS)
 
 generate: python
-	@printf "\n\n========== Lancement de generation.py ==========\n\n"
-	PYTHONPATH=build $(PYTHON) generation.py
+	@printf "\n\n==== Lancement de generation_wrapper_v0.py ====\n\n"
+	PYTHONPATH=build $(PYTHON) python/jmmm/generation_wrapper_v0.py
 	@printf "\n\n================================================\n\n"
 
 # ---------- Dépendances automatiques (headers) ----------
