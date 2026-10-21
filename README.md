@@ -93,21 +93,14 @@ Les tests sont écrits avec CxxTest dans `tests/`. Pour ajouter une suite de tes
 make test
 ```
 
-## Module Python & Wrapper
+## Wrapper python
 
-### Compilation manuelle du Wrapper
-Le wrapper génère un module Python (`ipsdev.cpython-3xx-....so`) :
-```sh
-g++ -O2 -Wall -std=c++17 -fPIC -shared $(python3-config --includes) \
-    src/wrapper.cpp src/basis.cpp src/poly.cpp \
-    -o ipsdev$(python3-config --extension-suffix) -larmadillo -Iinclude
-```
+Pour compiler le wrapper python :
 
-Il est également possible de compiler via le Makefile :
 ```sh
 make python
 ```
-Le module compilé est automatiquement placé dans `python/ipsdev/`.
+Le module compilé est automatiquement placé dans `build/`.
 
 ### Fonctions exposées (Module `ipsdev` et avancé `simulation_cpp`)
 En plus des exécutables natifs, le projet propose un module Python natif nommé `simulation_cpp` permettant d'appeler directement les cœurs de calcul optimisés depuis des scripts d'analyse ou de visualisation. Les enveloppes de liaison gèrent la conversion zéro-copie de `numpy.ndarray` vers `arma::vec` et inversement.
@@ -123,12 +116,12 @@ Toutes les versions ne sont pas exposées, mais le module expose principalement 
 
 ```python
 import numpy as np
-import ipsdev
+import simulation_cpp
 
 rVals = np.linspace(0.01, 10.0, 150)
 zVals = np.linspace(-10.0, 10.0, 150)
 
-rho = ipsdev.rho_fabulous(rVals, zVals, len(rVals), len(zVals))
+rho = rho_fabulous(rVals, zVals, len(rVals), len(zVals))
 print(rho.shape)
 ```
 
