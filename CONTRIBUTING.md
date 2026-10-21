@@ -22,18 +22,17 @@
 ## Commits
 
 Format `type: description` (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`).
-Exemple : `fix: corrige la pagination`
 
-|Type|	Usage|	Effet sur la version|
+|Type|Usage|Version |
 |:--|:--|:--|
-|feat|	nouvelle fonctionnalité|	MINOR|
-|fix|	correction de bug|	PATCH|
-|docs|	documentation uniquement|	aucun|
-|refactor|	réécriture sans changer le comportement|	aucun|
-|test|	ajout ou modification de tests|	aucun|
-|chore|	maintenance (dépendances, config, release)|	aucun|
-|perf|	amélioration de performance|	PATCH|
-|style|	mise en forme (espaces, virgules)|	aucun|
+|feat|nouvelle fonctionnalité|MINOR|
+|fix|correction de bug|PATCH|
+|docs|documentation uniquement|aucun|
+|refactor|réécriture sans changer le comportement|aucun|
+|test|ajout ou modification de tests|aucun|
+|chore|maintenance (dépendances, config, release)|aucun|
+|perf|amélioration de performance|PATCH|
+|style|mise en forme (espaces, virgules)|aucun|
 
 
 ## Relecture
