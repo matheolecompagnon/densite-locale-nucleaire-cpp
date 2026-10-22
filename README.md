@@ -1,27 +1,29 @@
 # ipsdev
 
-Modélisation en C++ de la **densité nucléaire locale** \(\rho(\mathbf{r})\) à partir d'une base d'oscillateur harmonique déformé en coordonnées cylindriques. Le projet utilise **Armadillo** pour l'algèbre linéaire, est validé par des tests unitaires **CxxTest**, dispose d'un mode benchmark et d'un module Python (**pybind11**).
+Modélisation en C++ de la **densité nucléaire locale** $\rho(\mathbf{r})$ à partir d'une base d'oscillateur harmonique déformé en coordonnées cylindriques. Le projet utilise **Armadillo** pour l'algèbre linéaire, est validé par des tests unitaires **CxxTest**, dispose d'un mode benchmark et d'un module Python (**pybind11**).
 
 ## Principe & Objectif
 
 La densité nucléaire locale s'écrit :
 
-\[\rho(\mathbf{r}) = \sum_{a,b} \rho_{ab}\,\psi_a(\mathbf{r})\,\psi_b^*(\mathbf{r})\]
+$$
+\rho(\mathbf{r}) = \sum_{a,b} \rho_{ab}\,\psi_a(\mathbf{r})\,\psi_b^*(\mathbf{r})
+$$
 
-Les fonctions de base \(\psi_{m,n,n_z}\) dépendent des nombres quantiques \((m, n, n_z)\) et des paramètres de déformation \(b_\perp\) et \(b_z\). Comme \(\rho_{ab}\) est nul dès que \(m_a \neq m_b\), la phase \(e^{im\theta}\) disparaît et on utilise la fonction réelle :
+Les fonctions de base $\psi_{m,n,n_z}$ dépendent des nombres quantiques $(m, n, n_z)$ et des paramètres de déformation $b_\perp$ et $b_z$. Comme $\rho_{ab}$ est nul dès que $m_a \neq m_b$, la phase $e^{im\theta}$ disparaît et on utilise la fonction réelle :
 
-\[\psi_{m,n,n_z}(r_\perp, z) = Z(z, n_z)\,R(r_\perp, m, n)\]
+$$\psi_{m,n,n_z}(r_\perp, z) = Z(z, n_z)\,R(r_\perp, m, n)$$
 
-* **Partie axiale** \(Z(z, n_z)\) : fonction de Hermite, de paramètre \(b_z\).
-* **Partie radiale** \(R(r_\perp, m, n)\) : fonction de Laguerre généralisée, de paramètre \(b_\perp\).
+* **Partie axiale** $Z(z, n_z)$ : fonction de Hermite, de paramètre $b_z$.
+* **Partie radiale** $R(r_\perp, m, n)$ : fonction de Laguerre généralisée, de paramètre $b_\perp$.
 
-La base est tronquée à partir des paramètres \(N\) et \(Q\), qui fixent les bornes `mMax`, `nMax[m]` et `n_zMax[m, n]` afin de ne conserver que les états utiles.
+La base est tronquée à partir des paramètres $N$ et $Q$, qui fixent les bornes `mMax`, `nMax[m]` et `n_zMax[m, n]` afin de ne conserver que les états utiles.
 
-Le but du projet est de modéliser ce calcul et de proposer plusieurs algorithmes d'évaluation de \(\rho\), de la version naïve à la version `ultimate`, et de les comparer par benchmark. Cela passe par :
-1. **Les polynômes** de Hermite \(H_n\) et de Laguerre généralisés \(L_n^m\), évalués par relation de récurrence (`poly`).
-2. **Les fonctions de base** \(Z\), \(R\) et \(\psi\) (`basis`).
+Le but du projet est de modéliser ce calcul et de proposer plusieurs algorithmes d'évaluation de $\rho$, de la version naïve à la version `ultimate`, et de les comparer par benchmark. Cela passe par :
+1. **Les polynômes** de Hermite $H_n$ et de Laguerre généralisés $L_n^m$, évalués par relation de récurrence (`poly`).
+2. **Les fonctions de base** $Z$, $R$ et $\psi$ (`basis`).
 3. **La troncation de la base** menée par la classe de gestion.
-4. **La simulation et le benchmark** (`simulation`, `bench`) pour calculer \(\rho(\mathbf{r})\) et comparer les performances.
+4. **La simulation et le benchmark** (`simulation`, `bench`) pour calculer $\rho(\mathbf{r})$ et comparer les performances.
 
 ## Dépendances
 
@@ -127,7 +129,7 @@ print(rho.shape)
 
 ## Benchmark
 
-Le benchmark compare plusieurs algorithmes de calcul de la densité \(\rho(\mathbf{r})\). Il est lancé avec :
+Le benchmark compare plusieurs algorithmes de calcul de la densité $\rho(\mathbf{r})$. Il est lancé avec :
 ```sh
 make bench
 ./build/model-bench
@@ -166,9 +168,9 @@ Chaque algorithme est mesuré après **10 itérations de préchauffe (Warmup)**,
 L'intégralité des fonctions de résolution, d'optimisation et les structures du cœur de calcul C++ (`BasisState`, `Basis`) est documentée selon les standards Doxygen (`@brief`, `@param`, `@return`, `@note`).
 
 ### Implémentations couvertes :
-* **Approches de base et filtrage :** `rho_naif` (référence à 6 boucles imbriquées) et `rho_kronecker` (filtre \(m == mp\) via invariance azimutale).
-* **Stratégies de réorganisation :** `rho_factorized` (décalage/offset par blocs \(m\)), `rho_linearized` (en vecteur linéaire unique) et sa variante `rho_linearized_again` (boucle unique avec surcoût de divisions/modulos), ainsi que `rho_optimized_m` (indexation par blocs de moment cinétique \(m\)).
-* **Optimisations mémoire et symétrie :** `rho_symmetric` & `rho_symmetric_optimized` (symétrie des termes \(i \le j\)) et `rho_memory_max` (mémoïsation maximale, optimisations des caches CPU et du **TLB (Translation Lookaside Buffer)** en HPC).
+* **Approches de base et filtrage :** `rho_naif` (référence à 6 boucles imbriquées) et `rho_kronecker` (filtre $m == mp$ via invariance azimutale).
+* **Stratégies de réorganisation :** `rho_factorized` (décalage/offset par blocs $m$), `rho_linearized` (en vecteur linéaire unique) et sa variante `rho_linearized_again` (boucle unique avec surcoût de divisions/modulos), ainsi que `rho_optimized_m` (indexation par blocs de moment cinétique $m$).
+* **Optimisations mémoire et symétrie :** `rho_symmetric` & `rho_symmetric_optimized` (symétrie des termes $i \le j$) et `rho_memory_max` (mémoïsation maximale, optimisations des caches CPU et du **TLB (Translation Lookaside Buffer)** en HPC).
 * **Niveaux supérieurs :** `rho_fabulous` (utilisation des routines **BLAS 3 - DGEMM**) et `rho_ultimate` (décomposition de **Cholesky** sur matrices définies positives).
 
 ### Génération de la documentation
