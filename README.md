@@ -74,6 +74,7 @@ Les arguments du programme se passent avec la variable `ARGS="..."`.
 
 ## Structure du projet
 
+```text
 .
 ├── Makefile
 ├── rho.arma        # Matrice rho du projet
@@ -87,6 +88,7 @@ Les arguments du programme se passent avec la variable `ARGS="..."`.
 ├── docs/           # Configuration et sortie Doxygen
 ├── bin/            # Objets, dépendances (.d) et exécutable de test (généré)
 └── build/          # Exécutables finaux (généré)
+```
 
 ## Tests
 
