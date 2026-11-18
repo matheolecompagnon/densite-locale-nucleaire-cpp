@@ -771,13 +771,11 @@ arma::mat rho_memory_max(const arma::vec rVals, const arma::vec zVals, int nbR, 
 
     std::vector<BasisState> states;
     std::vector<arma::mat> func;
-    int i = 0;
     for (int m = 0; m < basis.mMax; m++) {
         for (int n = 0; n < basis.nMax(m); n++) {
             for (int n_z = 0; n_z < basis.n_zMax(m, n); n_z++) {
                 states.push_back({m, n, n_z});
                 func.push_back(basis.basisFunc(m, n, n_z, zVals, rVals));
-                i++;
             }
         }
     }
