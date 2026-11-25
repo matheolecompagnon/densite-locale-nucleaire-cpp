@@ -25,4 +25,6 @@
 
 %include "armanpy.i"
 
+%include "basis.hpp"
+%include "simulation.hpp"
 %include "density_simulation.h"
