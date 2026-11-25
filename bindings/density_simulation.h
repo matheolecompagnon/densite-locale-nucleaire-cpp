@@ -36,4 +36,8 @@ class Basis {
         arma::vec zPart(arma::vec z, int n_z);
 };
 
+void arma_load_mat(arma::mat &mat, char* filename) {
+    mat.load(filename, arma::arma_ascii);
+}
+
 #endif
