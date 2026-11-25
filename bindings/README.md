@@ -15,13 +15,19 @@ make
 ```
 
 
-## 3. Désinstaller
+## 3. Tester
+
+```bash
+python3 ../tests/python/test_bindings.py
+```
+
+## 4. Désinstaller
 
 ```bash
 make uninstall
 ```
 
-## 4. Clean
+## 5. Clean
 
 Supprime les fichiers intermédiaires de build.
 
