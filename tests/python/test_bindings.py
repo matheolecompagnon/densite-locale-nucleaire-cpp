@@ -10,6 +10,7 @@ import sys
 import unittest
 
 import numpy as np
+import numpy.testing as npt
 
 RACINE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.append(os.path.join(RACINE, "bindings"))
@@ -51,6 +52,8 @@ class TestBindings(unittest.TestCase):
         m = np.zeros((1, 1), order="F")
         d.arma_load_mat(m, "data/rho.arma")
         self.assertEqual(m.shape, (374, 374))
+        npt.assert_array_equal(m, m.T)
+        print(f"trace rho : {np.trace(m)}")
 
     def test_mauvais_type(self):
         with self.assertRaises(TypeError):
